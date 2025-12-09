@@ -59,24 +59,17 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen text-white" style={{ backgroundColor: '#08334f' }}>
       <header className="flex items-center justify-between px-8 py-5 border-b border-white/10 bg-white/10 backdrop-blur-sm relative z-40">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="hidden md:flex items-center gap-4">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                  activeTab === tab.key
-                    ? "bg-orange-500 text-white shadow-lg shadow-orange-500/40 scale-105"
-                    : "bg-white/5 text-white/90 hover:bg-white/10 hover:text-white hover:scale-105 border border-white/5"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        <div className="flex-1 flex items-center">
+          <img 
+            src="https://res.cloudinary.com/dpu6rveug/image/upload/v1765257092/Screenshot_2025-12-09_104105_sesibf.png" 
+            alt="Ocean Group Logo" 
+            className="h-16 md:h-20 w-auto object-contain brightness-110 contrast-110 drop-shadow-lg"
+          />
         </div>
-        <div className="relative z-50" ref={menuRef}>
+        <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight text-center flex-1">
+          DASHBOARD
+        </h1>
+        <div className="flex-1 flex justify-end relative z-50" ref={menuRef}>
           <button
             onClick={() => setIsMenuOpen((v) => !v)}
             className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/10 hover:border-white/20 hover:scale-105 shadow-lg relative z-50"
@@ -135,17 +128,28 @@ export default function DashboardPage() {
         </>
       )}
 
-      <main className="px-6 py-10">
-        <div className="mx-auto max-w-7xl space-y-6">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-sky-400 font-semibold mb-2">
-                Dashboard
-              </p>
-              <h1 className="text-4xl font-bold text-white tracking-tight">
-                Operations, PMS, and QHSE overview
-              </h1>
+      <main className="px-6 py-8">
+        <div className="mx-auto max-w-7xl space-y-8">
+          {/* Tabs centered with light border separator */}
+          <div className="text-center pb-6 border-b border-white/5">
+            <div className="flex items-center justify-center gap-4">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`rounded-xl px-8 py-3 text-sm font-semibold transition-all duration-200 ${
+                    activeTab === tab.key
+                      ? "bg-orange-500 text-white shadow-lg shadow-orange-500/40 scale-105"
+                      : "bg-white/5 text-white/90 hover:bg-white/10 hover:text-white hover:scale-105 border border-white/5"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
+          </div>
+
+          <div className="flex justify-end">
             {cta && (
               <Link
                 href={cta.href}

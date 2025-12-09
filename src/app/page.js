@@ -14,7 +14,7 @@ export default function Home() {
         >
           Go to Dashboard
         </Link>
-      </div>
+    </div>
     </main>
   );
 }
