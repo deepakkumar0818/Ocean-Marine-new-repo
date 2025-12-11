@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef, forwardRef } from "react";
+import { usePathname } from "next/navigation";
 
 const statusTone = {
   INPROGRESS: {
@@ -26,10 +27,21 @@ const statusTone = {
   },
 };
 
+const sidebarTabs = [
+  { key: "documentation", label: "Documentation", href: "/operations/sts-operations/new" },
+  { key: "compatibility", label: "Compatibility", href: "/operations/sts-operations/new/compatibility" },
+  { key: "hose-transfer", label: "Hose transfer record", href: "#" },
+  { key: "forms", label: "Forms and checklist", href: "#" },
+  { key: "ports", label: "Ports and Terminals", href: "#" },
+];
+
 export default function NewOperationPage() {
   const [status, setStatus] = useState("INPROGRESS");
   const [showStatusList, setShowStatusList] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const statusRef = useRef(null);
+  const sidebarRef = useRef(null);
+  const pathname = usePathname();
 
   const statuses = [
     { key: "INPROGRESS", label: "In progress" },
@@ -48,6 +60,24 @@ export default function NewOperationPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, [showStatusList]);
 
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    if (isSidebarOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSidebarOpen]);
+
+  const activeTab = sidebarTabs.find(tab => pathname === tab.href)?.key || "documentation";
+
   const docFields = [
     { label: "SSQ", side: "left" },
     { label: "Q88", side: "left" },
@@ -58,51 +88,92 @@ export default function NewOperationPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-transparent text-white">
-      <div className="mx-auto max-w-6xl px-6 py-8">
-        <header className="mb-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 border border-white/10 hover:bg-white/20 transition"
+    <div className="min-h-screen bg-transparent text-white flex">
+      {/* Left Sidebar */}
+      <div
+        ref={sidebarRef}
+        className={`fixed left-0 top-0 h-full bg-slate-900/98 border-r border-white/20 shadow-2xl backdrop-blur-md z-50 transition-transform duration-300 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        style={{ width: "280px" }}
+      >
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <h2 className="text-lg font-bold text-white">Navigation</h2>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 transition"
+              aria-label="Close sidebar"
             >
-              <span className="text-lg">←</span>
-            </Link>
-            <div>
-              <p className="text-sm uppercase tracking-[0.25em] text-sky-300">
-                STS Management System
-              </p>
-              <h1 className="text-2xl font-bold">New Operation</h1>
+              <span className="text-white text-lg">×</span>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-2">
+              {sidebarTabs.map((tab) => (
+                <Link
+                  key={tab.key}
+                  href={tab.href}
+                  className={`block w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
+                    activeTab === tab.key
+                      ? "bg-orange-500 text-white shadow-lg shadow-orange-500/40"
+                      : "text-white/90 hover:bg-white/10 hover:text-white border border-white/5"
+                  }`}
+                >
+                  {tab.label}
+                </Link>
+              ))}
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="#"
-              className="hidden rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white/80 backdrop-blur md:inline-flex"
-            >
-              Client: OG
-            </Link>
-            <div className="flex overflow-hidden rounded-full border border-white/10">
-              <span className="bg-orange-500 px-4 py-2 text-sm font-semibold">
-                Documentation
-              </span>
+        </div>
+      </div>
+
+      {/* Sidebar Toggle Button */}
+      {!isSidebarOpen && (
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="fixed left-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition border border-white/10 shadow-lg"
+          aria-label="Open sidebar"
+        >
+          <span className="text-white text-xl">☰</span>
+        </button>
+      )}
+
+      {/* Main Content */}
+      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? "ml-0 md:ml-72" : "ml-0"}`}>
+        <div className="mx-auto max-w-6xl px-6 py-8">
+          <header className="mb-6 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
               <Link
-                href="/operations/sts-operations/new/compatibility"
-                className="px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/10"
+                href="/dashboard"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 border border-white/10 hover:bg-white/20 transition"
               >
-                Compatibility
+                <span className="text-lg">←</span>
               </Link>
+              <div>
+                <p className="text-sm uppercase tracking-[0.25em] text-sky-300">
+                  STS Management System
+                </p>
+                <h1 className="text-2xl font-bold">New Operation</h1>
+              </div>
             </div>
-            <div
-              className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-wide md:flex ${statusTone[status]?.pill || "bg-white/10 border-white/10 text-white"}`}
-            >
-              <span
-                className={`h-2 w-2 rounded-full ${statusTone[status]?.dot || "bg-white"}`}
-              />
-              {statuses.find((s) => s.key === status)?.label || status}
+            <div className="flex items-center gap-3">
+              <Link
+                href="#"
+                className="hidden rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white/80 backdrop-blur md:inline-flex"
+              >
+                Client: OG
+              </Link>
+              <div
+                className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-wide md:flex ${statusTone[status]?.pill || "bg-white/10 border-white/10 text-white"}`}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${statusTone[status]?.dot || "bg-white"}`}
+                />
+                {statuses.find((s) => s.key === status)?.label || status}
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur shadow-2xl">
           <div className="flex flex-wrap items-center gap-3 border-b border-white/10 pb-4">
@@ -172,6 +243,7 @@ export default function NewOperationPage() {
                 ))}
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -10,6 +9,8 @@ const tabs = [
   { key: "operations", label: "Operations" },
   { key: "pms", label: "PMS" },
   { key: "qhse", label: "QHSE" },
+  { key: "accounts", label: "Accounts" },
+  { key: "hr", label: "HR" },
 ];
 
 const menuItems = [
@@ -28,20 +29,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape' && isMenuOpen) {
+      if (e.key === "Escape" && isMenuOpen) {
         setIsMenuOpen(false);
       }
     };
 
     if (isMenuOpen) {
-      // Prevent body scroll when menu is open
-      document.body.style.overflow = 'hidden';
-      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = "hidden";
+      document.addEventListener("keydown", handleEscape);
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
-      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = "unset";
+      document.removeEventListener("keydown", handleEscape);
     };
   }, [isMenuOpen]);
 
@@ -54,25 +54,53 @@ export default function DashboardPage() {
     operations: { label: "Go to Operations", href: "/operations" },
     pms: { label: "Go to PMS", href: "/pms" },
     qhse: { label: "Go to QHSE", href: "/qhse" },
+    accounts: { label: "Go to Accounts", href: "/accounts" },
+    hr: { label: "Go to HR", href: "/hr" },
   }[activeTab];
 
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  };
+
   return (
-    <div className="min-h-screen text-white" style={{ backgroundColor: '#08334f' }}>
+    <div
+      className="min-h-screen text-white"
+      style={{ backgroundColor: "#08334f" }}
+    >
       <header className="flex items-center justify-between px-8 py-5 border-b border-white/10 bg-white/10 backdrop-blur-sm relative z-40">
         <div className="flex-1 flex items-center">
-          <img 
-            src="https://res.cloudinary.com/dpu6rveug/image/upload/v1765257092/Screenshot_2025-12-09_104105_sesibf.png" 
-            alt="Ocean Group Logo" 
-            className="h-16 md:h-20 w-auto object-contain brightness-110 contrast-110 drop-shadow-lg"
+          <img
+            src="https://res.cloudinary.com/dpu6rveug/image/upload/v1765355146/Screenshot_2025-12-10_135506_rlmi4c.png"
+            alt="Ocean Group Logo"
+            className="h-16 md:h-20 w-auto object-contain brightness-110 border-2 contrast-110 drop-shadow-lg"
           />
         </div>
         <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight text-center flex-1">
           DASHBOARD
         </h1>
-        <div className="flex-1 flex justify-end relative z-50" ref={menuRef}>
+        <div
+          className="flex-1 flex justify-end items-center gap-3 relative z-50"
+          ref={menuRef}
+        >
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+            <div className="h-8 w-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-semibold">
+              U
+            </div>
+            <span className="text-sm cursor-pointer text-white/80">
+              Profile
+            </span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="rounded-full cursor-pointer bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 border border-white/15 hover:bg-white/20 transition"
+          >
+            Sign out
+          </button>
           <button
             onClick={() => setIsMenuOpen((v) => !v)}
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/10 hover:border-white/20 hover:scale-105 shadow-lg relative z-50"
+            className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/10 hover:border-white/20 hover:scale-105 shadow-lg"
             aria-label="Open menu"
           >
             <div className="space-y-1.5">
@@ -87,7 +115,6 @@ export default function DashboardPage() {
       {/* Full right-side sidebar menu - Outside header */}
       {isMenuOpen && (
         <>
-          {/* Backdrop overlay */}
           <button
             type="button"
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-9998 border-0 cursor-pointer"
@@ -95,8 +122,8 @@ export default function DashboardPage() {
             aria-label="Close menu"
           />
           {/* Sidebar */}
-          <div 
-            data-sidebar 
+          <div
+            data-sidebar
             className="fixed right-0 top-0 h-full w-80 bg-slate-900/98 border-l border-white/20 shadow-2xl backdrop-blur-md z-9999"
           >
             <div className="flex flex-col h-full">
@@ -166,4 +193,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

@@ -1,14 +1,19 @@
 "use client";
 
+import PropTypes from "prop-types";
 import OperationsCharts from "./OperationsCharts";
 import PMSCharts from "./PMSCharts";
 import QHSECharts from "./QHSECharts";
+import AccountCharts from "./AccountCharts";
+import HrCharts from "./HrCharts";
 
-export default function DashboardTabs({ activeTab, onTabChange }) {
+const DashboardTabs = ({ activeTab, onTabChange }) => {
   const tabs = [
     { key: "operations", label: "Operations" },
     { key: "pms", label: "PMS" },
     { key: "qhse", label: "QHSE" },
+    { key: "accounts", label: "Accounts" },
+    { key: "hr", label: "HR" },
   ];
 
   return (
@@ -33,8 +38,16 @@ export default function DashboardTabs({ activeTab, onTabChange }) {
         {activeTab === "operations" && <OperationsCharts />}
         {activeTab === "pms" && <PMSCharts />}
         {activeTab === "qhse" && <QHSECharts />}
+        {activeTab === "accounts" && <AccountCharts />}
+        {activeTab === "hr" && <HrCharts />}
       </div>
     </div>
   );
-}
+};
 
+DashboardTabs.propTypes = {
+  activeTab: PropTypes.string.isRequired,
+  onTabChange: PropTypes.func.isRequired,
+};
+
+export default DashboardTabs;
