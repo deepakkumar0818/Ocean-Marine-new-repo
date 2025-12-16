@@ -1,21 +1,22 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import EquipmentListContent from "./equipment-list/EquipmentListContent";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import EquipmentListContent from "./EquipmentListContent";
 
 const sidebarTabs = [
   {
-    key: "equipment-used",
+    key: "equipment-list",
     label: "Equipments list",
-    href: "/pms",
+    href: "/pms/equipment-list",
   },
 ];
 
-export default function PmsPage() {
-  const [activeTab, setActiveTab] = useState("equipment-used");
+export default function EquipmentListPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const sidebarRef = useRef(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -32,6 +33,9 @@ export default function PmsPage() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isSidebarOpen]);
+
+  const activeTab =
+    sidebarTabs.find((tab) => pathname === tab.href)?.key || "equipment-list";
 
   return (
     <div className="min-h-screen bg-transparent text-white flex">
@@ -57,9 +61,9 @@ export default function PmsPage() {
           <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-2">
               {sidebarTabs.map((tab) => (
-                <button
+                <Link
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
+                  href={tab.href}
                   className={`block w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
                     activeTab === tab.key
                       ? "bg-orange-500 text-white shadow-lg shadow-orange-500/40"
@@ -67,7 +71,7 @@ export default function PmsPage() {
                   }`}
                 >
                   {tab.label}
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -104,15 +108,12 @@ export default function PmsPage() {
                 <p className="text-sm uppercase tracking-[0.25em] text-sky-300">
                   PMS
                 </p>
-                <h1 className="text-2xl font-bold">Preventive Maintenance</h1>
+                <h1 className="text-2xl font-bold">Equipment List</h1>
               </div>
             </div>
           </header>
 
-          {/* Tab Content */}
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur shadow-2xl">
-            {activeTab === "equipment-used" && <EquipmentListContent />}
-          </div>
+          <EquipmentListContent />
         </div>
       </div>
     </div>

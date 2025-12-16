@@ -1,42 +1,121 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 
-const stsOperationSchema = new Schema(
+const equipmentUsageSchema = new mongoose.Schema(
   {
-    // Versioning
-    parentOperationId: { type: Schema.Types.ObjectId, required: true },
+    equipment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "EquipmentUsed",
+      required: true,
+    },
+
+    // Operation-level usage tracking
+    startTime: {
+      type: Date,
+      required: true,
+    },
+
+    endTime: {
+      type: Date,
+    },
+
+    usedHours: {
+      type: Number,
+      default: 0,
+    },
+
+    status: {
+      type: String,
+      enum: ["IN_USE", "RELEASED"],
+      default: "IN_USE",
+    },
+  },
+  { _id: false }
+);
+
+const stsOperationSchema = new mongoose.Schema(
+  {
+    // VERSIONING
+    parentOperationId: { type: mongoose.Schema.Types.ObjectId, required: true },
     version: { type: Number, default: 1 },
     isLatest: { type: Boolean, default: true },
 
     // GENERAL INFORMATION
-    title: String,
-    typeOfJob: String,
-    operationStatus: String,
+    Operation_Ref_No: {
+      type: String,
+      required: true,
+      index: true,
+    },
 
-    location: { type: Schema.Types.ObjectId, ref: "Location" }, 
-    dateOfJob: Date,
+    typeOfOperation: String,
+    mooringMaster: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "MooringMaster",
+    },
+    location: { type: mongoose.Schema.Types.ObjectId, ref: "Location" },
+    client: String,
 
-    stbl: String,
-    sisterShip: String,
+    operationStatus: {
+      type: String,
+      enum: ["INPROGRESS", "COMPLETED", "CANCELED", "PENDING"],
+      default: "INPROGRESS",
+    },
 
-    mooringMaster: { type: Schema.Types.ObjectId, ref: "MooringMaster" }, 
+    operationStartTime: {
+      type: Date,
+      required: true,
+    },
+    operationEndTime: {
+      type: Date,
+    },
 
-    typeOfCargo: { type: Schema.Types.ObjectId, ref: "CargoType" },
+    flowDirection: {
+      type: String,
+      enum: ["left", "right", "both"],
+      default: "left",
+    },
 
     quantity: Number,
+    typeOfCargo: { type: mongoose.Schema.Types.ObjectId, ref: "CargoType" },
 
+    // ================================
+    // EQUIPMENT USAGE (KEY CHANGE)
+    // ================================
+    equipments: [equipmentUsageSchema],
+
+    // =========================
+    // CHS DOCUMENT GROUP
+    // =========================
+    chs: String,
+    chsSSQ: String,
+    chsQ88: String,
+    chsGAPlan: String,
+    chsMSDS: String,
+    chsMooringArrangement: String,
+    chsIndemnity: String,
+
+    // =========================
+    // MS DOCUMENT GROUP
+    // =========================
+    ms: String,
+    msSSQ: String,
+    msQ88: String,
+    msGAPlan: String,
+    msMSDS: String,
+    msMooringArrangement: String,
+    msIndemnity: String,
+
+    // =========================
     // PRE-STS DOCUMENTS
+    // =========================
     jpo: String,
-    stblSSQ: String,
-    ssSSQ: String,
-    stblIndemnity: String,
-    ssIndemnity: String,
-    standingOrder: String,
+    riskAssessment: String,
+    mooringPlan: String,
 
-    // STS EQUIPMENT
-    stsEquipChecklistPriorOps: String,
-    stsEquipChecklistAfterOps: String,
+    DeclarationAtSea: String,
 
     // CHECKLISTS
+    // =========================
+    // =========================
     checklist1: String,
     checklist2: String,
     checklist3AB: String,
@@ -45,21 +124,22 @@ const stsOperationSchema = new Schema(
     checklist6AB: String,
     checklist7: String,
 
-    // FEEDBACK
-    stblMasterFeedback: String,
-    ssMasterFeedback: String,
-    workHours: String,
-
-    // ATTACHMENTS
     stsTimesheet: String,
+    standingOrder: String,
+    stsEquipChecklistPriorOps: String,
+    stsEquipChecklistAfterOps: String,
+    // =========================
+    // FEEDBACK
+    // =========================
+    chsFeedback: String,
+    msFeedback: String,
     hourlyChecks: String,
-    incidentReporting: String,
+    restHoursCKL: String,
 
-    // EQUIPMENT + REMARKS
-    equipmentUsed: String,
+    incidentReporting: String,
     remarks: String,
 
-    createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );

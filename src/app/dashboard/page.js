@@ -72,9 +72,9 @@ export default function DashboardPage() {
       <header className="flex items-center justify-between px-8 py-5 border-b border-white/10 bg-white/10 backdrop-blur-sm relative z-40">
         <div className="flex-1 flex items-center">
           <img
-            src="https://res.cloudinary.com/dpu6rveug/image/upload/v1765355146/Screenshot_2025-12-10_135506_rlmi4c.png"
+            src="https://res.cloudinary.com/dtqvb1uhi/image/upload/v1765800123/logo_xbm99t.png"
             alt="Ocean Group Logo"
-            className="h-16 md:h-20 w-auto object-contain brightness-110 border-2 contrast-110 drop-shadow-lg"
+            className="h-16 md:h-20 w-auto object-contain brightness-110  contrast-110 drop-shadow-lg"
           />
         </div>
         <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight text-center flex-1">

@@ -37,7 +37,7 @@ export default function LoginPage() {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage:
-            "url(https://res.cloudinary.com/dpu6rveug/image/upload/v1765346760/ocean-group-background_bzbnm3.webp)",
+            "url(https://res.cloudinary.com/dtqvb1uhi/image/upload/v1765800132/ocean-group-background_bzbnm3_mblquf.webp)",
         }}
       >
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
@@ -47,9 +47,7 @@ export default function LoginPage() {
         <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 shadow-2xl p-8">
           {/* Logo/Title Section */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">
-              OCEANS MARINE
-            </h1>
+            <h1 className="text-4xl font-bold text-white mb-2">OCEANE GROUP</h1>
           </div>
 
           {/* Login Form */}

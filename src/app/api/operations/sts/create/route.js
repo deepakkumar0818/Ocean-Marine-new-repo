@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import cloudinary from "@/lib/config/claudinary";
-import { formatBufferTo64 } from "@/lib/upload/datauri";
 import { connectDB } from "@/lib/config/connection";
 import StsOperation from "@/lib/mongodb/models/StsOperation";
+import EquipmentUsed from "@/lib/mongodb/models/EquipmentUsed";
 import mongoose from "mongoose";
+import path from "node:path";
 
 export async function POST(req) {
   await connectDB();
@@ -11,21 +12,34 @@ export async function POST(req) {
   try {
     const formData = await req.formData();
 
+    /* =====================
+       EXTRACT TEXT FIELDS
+    ====================== */
     const body = {};
     formData.forEach((value, key) => {
       if (typeof value === "string") body[key] = value;
     });
 
-    // File Fields
-    const fileFields = [
+    /* =====================
+       FILE UPLOAD CONFIG
+    ====================== */
+    const FILE_FIELDS = [
+      "chsSSQ",
+      "chsQ88",
+      "chsGAPlan",
+      "chsMSDS",
+      "chsMooringArrangement",
+      "chsIndemnity",
+      "msSSQ",
+      "msQ88",
+      "msGAPlan",
+      "msMSDS",
+      "msMooringArrangement",
+      "msIndemnity",
       "jpo",
-      "stblSSQ",
-      "ssSSQ",
-      "stblIndemnity",
-      "ssIndemnity",
-      "standingOrder",
-      "stsEquipChecklistPriorOps",
-      "stsEquipChecklistAfterOps",
+      "riskAssessment",
+      "mooringPlan",
+      "DeclarationAtSea",
       "checklist1",
       "checklist2",
       "checklist3AB",
@@ -33,69 +47,181 @@ export async function POST(req) {
       "checklist5AC",
       "checklist6AB",
       "checklist7",
-      "stblMasterFeedback",
-      "ssMasterFeedback",
       "stsTimesheet",
+      "standingOrder",
+      "stsEquipChecklistPriorOps",
+      "stsEquipChecklistAfterOps",
+      "chsFeedback",
+      "msFeedback",
       "hourlyChecks",
+      "restHoursCKL",
       "incidentReporting",
     ];
 
     const uploadedFiles = {};
 
-    // Basic file validation
-    const MAX_SIZE_BYTES = 25 * 1024 * 1024; 
-    const ALLOWED_TYPES = [
-      "application/pdf",
-      "image/png",
-      "image/jpeg",
-      "image/jpg",
-      "image/webp",
-    ];
+    const ALLOWED_EXT = new Set([
+      ".pdf",
+      ".doc",
+      ".docx",
+      ".png",
+      ".jpg",
+      ".jpeg",
+    ]);
+    const MAX_SIZE = 25 * 1024 * 1024; // 25MB
 
-    for (const field of fileFields) {
+    /* =====================
+       FILE UPLOAD LOOP
+    ====================== */
+    for (const field of FILE_FIELDS) {
       const file = formData.get(field);
-      if (file && typeof file !== "string") {
-        if (file.size > MAX_SIZE_BYTES) {
-          return NextResponse.json(
-            { error: `${field} exceeds 25MB limit` },
-            { status: 400 }
-          );
-        }
-        if (!ALLOWED_TYPES.includes(file.type)) {
-          return NextResponse.json(
-            { error: `${field} type not allowed (${file.type})` },
-            { status: 400 }
-          );
-        }
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const file64 = formatBufferTo64({ originalname: file.name, buffer });
 
-        const uploaded = await cloudinary.uploader.upload(file64, {
-          folder: "oceane/sts",
-        });
+      // Skip if missing or empty
+      if (!file || typeof file !== "object" || !file.name || file.size === 0) {
+        continue;
+      }
 
-        uploadedFiles[field] = uploaded.secure_url;
+      if (file.size > MAX_SIZE) {
+        return NextResponse.json(
+          { error: `${field} exceeds 25MB limit` },
+          { status: 400 }
+        );
+      }
+
+      const ext = path.extname(file.name).toLowerCase();
+      if (!ALLOWED_EXT.has(ext)) {
+        return NextResponse.json(
+          { error: `Invalid file type for ${field}` },
+          { status: 400 }
+        );
+      }
+
+      // 1. Determine Resource Type
+      // CRITICAL FIX: Force PDF, DOC, DOCX to "raw".
+      // This ensures they are stored as files and not processed as images (which corrupts them).
+      const isRaw = ext === ".pdf" || ext === ".doc" || ext === ".docx";
+      const resourceType = isRaw ? "raw" : "image";
+
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      // 2. Upload to Cloudinary
+      const uploadResult = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: "oceane/sts",
+            // FIX: Explicitly set resource_type based on file extension
+            resource_type: resourceType,
+            use_filename: true,
+            unique_filename: true,
+            filename_override: file.name,
+            // FIX: Removed 'allowed_formats' as it causes errors with 'raw' resource_type
+          },
+          (error, result) => {
+            if (error) {
+              console.error(`Cloudinary Upload Error for ${field}:`, error);
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          }
+        );
+        uploadStream.end(buffer);
+      });
+
+      // 3. Store the URL
+      // The secure_url will now correctly point to /raw/upload/ or /image/upload/ automatically
+      uploadedFiles[field] = uploadResult.secure_url;
+    }
+
+    /* =====================
+       EQUIPMENT VALIDATION
+    ====================== */
+    let equipmentIds = [];
+    if (body.equipments) {
+      try {
+        equipmentIds = Array.isArray(body.equipments)
+          ? body.equipments
+          : JSON.parse(body.equipments);
+      } catch (e) {
+        equipmentIds = [body.equipments];
       }
     }
 
-    // Generate parentId for FIRST VERSION
-    const parentId = new mongoose.Types.ObjectId();
+    let equipments = [];
+    if (equipmentIds.length > 0) {
+      equipments = await EquipmentUsed.find({
+        _id: { $in: equipmentIds },
+        availabilityStatus: "AVAILABLE",
+      });
 
-    const newOperation = await StsOperation.create({
+      if (equipments.length !== equipmentIds.length) {
+        return NextResponse.json(
+          { error: "One or more selected equipments are not available" },
+          { status: 400 }
+        );
+      }
+    }
+
+    /* =====================
+       OPERATION TIMES
+    ====================== */
+    const operationStartTime = body.operationStartTime
+      ? new Date(body.operationStartTime)
+      : new Date();
+    const operationEndTime = body.operationEndTime
+      ? new Date(body.operationEndTime)
+      : null;
+
+    /* =====================
+       EQUIPMENT USAGE
+    ====================== */
+    const equipmentUsage = equipments.map((eq) => ({
+      equipment: eq._id,
+      startTime: operationStartTime,
+      status: "IN_USE",
+    }));
+
+    /* =====================
+       CREATE STS OPERATION
+    ====================== */
+    const parentOperationId = new mongoose.Types.ObjectId();
+
+    const stsOperation = await StsOperation.create({
       ...body,
       ...uploadedFiles,
-      parentOperationId: parentId,
+      parentOperationId,
+      equipments: equipmentUsage,
+      operationStartTime,
+      operationEndTime,
       version: 1,
       isLatest: true,
     });
 
+    /* =====================
+       LOCK EQUIPMENTS
+    ====================== */
+    if (equipmentIds.length > 0) {
+      await EquipmentUsed.updateMany(
+        { _id: { $in: equipmentIds } },
+        {
+          availabilityStatus: "IN_USE",
+          currentOperation: stsOperation._id,
+        }
+      );
+    }
+
     return NextResponse.json(
-      { message: "STS Operation Created", data: newOperation },
+      {
+        message: "STS Operation created successfully",
+        data: stsOperation,
+      },
       { status: 201 }
     );
   } catch (error) {
+    console.error("STS CREATE ERROR:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to create STS Operation" },
+      { error: error.message || "Internal Server Error" },
       { status: 500 }
     );
   }

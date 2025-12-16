@@ -28,11 +28,34 @@ const statusTone = {
 };
 
 const sidebarTabs = [
-  { key: "documentation", label: "Documentation", href: "/operations/sts-operations/new" },
-  { key: "compatibility", label: "Compatibility", href: "/operations/sts-operations/new/compatibility" },
+  {
+    key: "documentation",
+    label: "Documentation",
+    href: "/operations/sts-operations/new",
+  },
+  {
+    key: "compatibility",
+    label: "Compatibility",
+    href: "/operations/sts-operations/new/compatibility",
+  },
   { key: "hose-transfer", label: "Hose transfer record", href: "#" },
   { key: "forms", label: "Forms and checklist", href: "#" },
   { key: "ports", label: "Ports and Terminals", href: "#" },
+  {
+    key: "cargos",
+    label: "Cargo types",
+    href: "/operations/sts-operations/new/cargos",
+  },
+  {
+    key: "locations",
+    label: "Locations",
+    href: "/operations/sts-operations/new/locations",
+  },
+  {
+    key: "mooring",
+    label: "Mooring masters",
+    href: "/operations/sts-operations/new/mooringmaster",
+  },
 ];
 
 export default function NewOperationPage() {
@@ -42,6 +65,21 @@ export default function NewOperationPage() {
   const statusRef = useRef(null);
   const sidebarRef = useRef(null);
   const pathname = usePathname();
+  const [cargoTypes, setCargoTypes] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [mooringMasters, setMooringMasters] = useState([]);
+  const [equipmentList, setEquipmentList] = useState([]);
+  const [loadingMasters, setLoadingMasters] = useState(false);
+  const [flowDir, setFlowDir] = useState("left");
+  const [submitting, setSubmitting] = useState(false);
+  const formRef = useRef(null);
+  const [formResetKey, setFormResetKey] = useState(0);
+  const cycleFlowDir = () =>
+    setFlowDir((d) => {
+      if (d === "left") return "right";
+      if (d === "right") return "both";
+      return "left";
+    });
 
   const statuses = [
     { key: "INPROGRESS", label: "In progress" },
@@ -76,19 +114,112 @@ export default function NewOperationPage() {
     };
   }, [isSidebarOpen]);
 
-  const activeTab = sidebarTabs.find(tab => pathname === tab.href)?.key || "documentation";
+  // Fetch master data for dynamic dropdowns
+  useEffect(() => {
+    const fetchMasters = async () => {
+      try {
+        setLoadingMasters(true);
+        const [cargoRes, locationRes, mooringRes, equipmentRes] =
+          await Promise.all([
+            fetch("/api/master/cargo-type/list"),
+            fetch("/api/master/locations/list"),
+            fetch("/api/master/mooring-master/list"),
+            fetch("/api/pms/equipment-used/list"),
+          ]);
 
-  const docFields = [
-    { label: "SSQ", side: "left" },
-    { label: "Q88", side: "left" },
-    { label: "Mooring Arr", side: "left" },
-    { label: "GA Plan", side: "right" },
-    { label: "MSDS", side: "right" },
-    { label: "Indemnity", side: "right" },
-  ];
+        const cargoJson = await cargoRes.json();
+        const locationJson = await locationRes.json();
+        const mooringJson = await mooringRes.json();
+        const equipmentJson = await equipmentRes.json();
+
+        setCargoTypes(cargoJson?.cargoTypes || []);
+        setLocations(locationJson?.locations || []);
+        setMooringMasters(mooringJson?.mooringMasters || []);
+        setEquipmentList(equipmentJson?.equipmentUsed || []);
+      } catch (error) {
+        console.error("Failed to load masters", error);
+      } finally {
+        setLoadingMasters(false);
+      }
+    };
+
+    fetchMasters();
+  }, []);
+
+  const activeTab =
+    sidebarTabs.find((tab) => pathname === tab.href)?.key || "documentation";
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      const formData = new FormData(formRef.current);
+
+      // Add status
+      formData.append("status", status);
+      formData.append("operationStatus", status);
+
+      // Add flow direction
+      formData.append("flowDirection", flowDir);
+
+      // IDs are now in option values; drop placeholders
+      const mooringMasterId = formData.get("mooringMaster");
+      if (!mooringMasterId || mooringMasterId === "Select") {
+        formData.delete("mooringMaster");
+      }
+
+      const locationId = formData.get("location");
+      if (!locationId || locationId === "Select") {
+        formData.delete("location");
+      }
+
+      const cargoId = formData.get("typeOfCargo");
+      if (!cargoId || cargoId === "Select") {
+        formData.delete("typeOfCargo");
+      }
+
+      // Equipments multi-select
+      const selectedEquipments = formData.getAll("equipments").filter(Boolean);
+      formData.delete("equipments");
+      selectedEquipments.forEach((id) => formData.append("equipments", id));
+
+      const response = await fetch("/api/operations/sts/create", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create operation");
+      }
+
+      alert("STS Operation created successfully!");
+      formRef.current?.reset();
+      setStatus("INPROGRESS");
+      setFlowDir("left");
+      setFormResetKey((k) => k + 1);
+    } catch (error) {
+      console.error("Submission error:", error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-transparent text-white flex">
+    <div
+      className="min-h-screen bg-transparent text-white flex"
+      style={{
+        backgroundImage:
+          "url('https://res.cloudinary.com/dtqvb1uhi/image/upload/v1765800114/gettyimages-1317779371-612x612_nurxsk.jpg')",
+        backgroundSize: "contain",
+        backgroundPosition: "center",
+        backgroundRepeat: "repeat",
+        backgroundColor: "#0b2740",
+      }}
+    >
       {/* Left Sidebar */}
       <div
         ref={sidebarRef}
@@ -140,13 +271,17 @@ export default function NewOperationPage() {
       )}
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? "ml-0 md:ml-72" : "ml-0"}`}>
-        <div className="mx-auto max-w-6xl px-6 py-8">
+      <div
+        className={`flex-1 transition-all duration-300 ${
+          isSidebarOpen ? "ml-0 md:ml-72" : "ml-0"
+        }`}
+      >
+        <div className="mx-auto max-w-7xl px-6 py-8 space-y-6">
           <header className="mb-6 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Link
                 href="/dashboard"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 border border-white/10 hover:bg-white/20 transition"
+                className="flex h-10 w-10 items-center  cursor-pointer justify-center rounded-full bg-white/10 border border-white/10 hover:bg-white/20 transition"
               >
                 <span className="text-lg">←</span>
               </Link>
@@ -158,114 +293,380 @@ export default function NewOperationPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Link
-                href="#"
-                className="hidden rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white/80 backdrop-blur md:inline-flex"
-              >
-                Client: OG
-              </Link>
               <div
-                className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-wide md:flex ${statusTone[status]?.pill || "bg-white/10 border-white/10 text-white"}`}
+                className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-wide md:flex ${
+                  statusTone[status]?.pill ||
+                  "bg-white/10 border-white/10 text-white"
+                }`}
               >
                 <span
-                  className={`h-2 w-2 rounded-full ${statusTone[status]?.dot || "bg-white"}`}
+                  className={`h-2 w-2 rounded-full ${
+                    statusTone[status]?.dot || "bg-white"
+                  }`}
                 />
                 {statuses.find((s) => s.key === status)?.label || status}
               </div>
             </div>
           </header>
 
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur shadow-2xl">
-          <div className="flex flex-wrap items-center gap-3 border-b border-white/10 pb-4">
-            <StatusDropdown
-              status={status}
-              onSelect={(val) => {
-                setStatus(val);
-                setShowStatusList(false);
-              }}
-              show={showStatusList}
-              setShow={setShowStatusList}
-              statuses={statuses}
-              ref={statusRef}
-            />
-            <div className="flex items-center gap-2 text-slate-200 text-sm">
-              <span className="text-lg">📅</span>
-              <span>Date From - Till</span>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {[
-              "Operation Ref No",
-              "Type of operation",
-              "Mooring Master",
-              "Location",
-              "Client",
-              "Type of cargo",
-              "Quantity",
-            ].map((field) => (
-              <div key={field} className="space-y-2">
-                <label className="text-sm font-semibold text-white/80">
-                  {field} :
-                </label>
-                <div className="h-12 rounded-xl border border-white/10 bg-white/5" />
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 flex flex-col items-center justify-center gap-6">
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-10">
-              <div className="flex items-center gap-3">
-                <span className="text-lg font-semibold">CHS :</span>
-                <div className="h-12 w-64 rounded-xl border border-white/10 bg-white/5" />
-              </div>
-              <span className="text-3xl text-white/70">← →</span>
-              <div className="flex items-center gap-3">
-                <span className="text-lg font-semibold">MS :</span>
-                <div className="h-12 w-64 rounded-xl border border-white/10 bg-white/5" />
+          <form
+            ref={formRef}
+            onSubmit={handleSubmit}
+            className="rounded-3xl border border-white/10 bg-[#0b2740]/90 p-6 backdrop-blur shadow-2xl space-y-6 max-w-6xl mx-auto"
+          >
+            <div className="flex flex-wrap items-center gap-3 border-b border-white/10 pb-4">
+              <StatusDropdown
+                status={status}
+                onSelect={(val) => {
+                  setStatus(val);
+                  setShowStatusList(false);
+                }}
+                show={showStatusList}
+                setShow={setShowStatusList}
+                statuses={statuses}
+                ref={statusRef}
+              />
+              <div className="flex flex-wrap items-center gap-3 text-sm text-slate-200">
+                <span className="text-lg">⏱️</span>
+                <div className="flex items-center gap-2">
+                  <span>Start</span>
+                  <input
+                    type="datetime-local"
+                    name="operationStartTime"
+                    required
+                    className="w-48 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40 transition outline-none [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span>End</span>
+                  <input
+                    type="datetime-local"
+                    name="operationEndTime"
+                    className="w-48 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40 transition outline-none [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-10 grid gap-8 md:grid-cols-2">
-            <div className="space-y-4">
-              {docFields
-                .filter((item) => item.side === "left")
-                .map((item) => (
-                  <DocRow key={item.label} label={item.label} tone="navy" />
-                ))}
+            {/* Top-line details */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <TextField
+                label="Operation Ref No"
+                placeholder="Enter reference"
+                name="Operation_Ref_No"
+              />
+              <SelectField
+                label="Type of operation"
+                options={["STS", "Ship to Ship", "Lightering"]}
+                name="typeOfOperation"
+              />
+              <TextField
+                label="Client"
+                placeholder="Enter client name"
+                name="client"
+              />
+              <SelectField
+                label="Mooring Master"
+                loading={loadingMasters}
+                options={[
+                  { label: "Select", value: "" },
+                  ...mooringMasters
+                    .filter((m) => m.availabilityStatus === "AVAILABLE")
+                    .map((m) => ({ label: m.name, value: m._id })),
+                ]}
+                name="mooringMaster"
+              />
+              <SelectField
+                label="Location"
+                loading={loadingMasters}
+                options={[
+                  { label: "Select", value: "" },
+                  ...locations.map((l) => ({ label: l.name, value: l._id })),
+                ]}
+                name="location"
+              />
+              <SelectField
+                label="Type of cargo"
+                loading={loadingMasters}
+                options={[
+                  { label: "Select", value: "" },
+                  ...cargoTypes.map((c) => ({ label: c.type, value: c._id })),
+                ]}
+                name="typeOfCargo"
+              />
+              <NumberField
+                label="Quantity"
+                placeholder="MT / m³"
+                name="quantity"
+              />
             </div>
-            <div className="space-y-4">
-              {docFields
-                .filter((item) => item.side === "right")
-                .map((item) => (
-                  <DocRow key={item.label} label={item.label} tone="orange" />
-                ))}
+
+            {/* CHS / MS block */}
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-md shadow-inner space-y-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-200 font-bold">
+                    CHS
+                  </div>
+                  <span className="text-sm text-white/70">Document Bundle</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={cycleFlowDir}
+                  className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white/80 hover:bg-white/10 transition"
+                  aria-label="Toggle direction"
+                  title="Toggle flow direction"
+                >
+                  <ArrowIcon direction={flowDir} />
+                </button>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-orange-500/15 border border-orange-400/30 flex items-center justify-center text-orange-200 font-bold">
+                    MS
+                  </div>
+                  <span className="text-sm text-white/70">Document Bundle</span>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-sky-400/20 bg-sky-500/5 p-4 space-y-3">
+                  <TextField
+                    label="CHS (main)"
+                    name="chs"
+                    placeholder="Enter CHS name"
+                  />
+                  <UploadPill
+                    label="SSQ"
+                    name="chsSSQ"
+                    accent="sky"
+                    resetKey={formResetKey}
+                  />
+                  <UploadPill
+                    label="Q88"
+                    name="chsQ88"
+                    accent="sky"
+                    resetKey={formResetKey}
+                  />
+                  <UploadPill
+                    label="Mooring Arr."
+                    name="chsMooringArrangement"
+                    accent="sky"
+                    resetKey={formResetKey}
+                  />
+                  <UploadPill
+                    label="GA Plan"
+                    name="chsGAPlan"
+                    accent="sky"
+                    resetKey={formResetKey}
+                  />
+                  <UploadPill
+                    label="MSDS"
+                    name="chsMSDS"
+                    accent="sky"
+                    resetKey={formResetKey}
+                  />
+                  <UploadPill
+                    label="Indemnity"
+                    name="chsIndemnity"
+                    accent="sky"
+                    resetKey={formResetKey}
+                  />
+                </div>
+
+                <div className="rounded-2xl border border-orange-400/20 bg-orange-500/5 p-4 space-y-3">
+                  <TextField
+                    label="MS (main)"
+                    name="ms"
+                    placeholder="Enter MS name"
+                  />
+                  <UploadPill
+                    label="SSQ"
+                    name="msSSQ"
+                    accent="orange"
+                    resetKey={formResetKey}
+                  />
+                  <UploadPill
+                    label="Q88"
+                    name="msQ88"
+                    accent="orange"
+                    resetKey={formResetKey}
+                  />
+                  <UploadPill
+                    label="Mooring Arr."
+                    name="msMooringArrangement"
+                    accent="orange"
+                    resetKey={formResetKey}
+                  />
+                  <UploadPill
+                    label="GA Plan"
+                    name="msGAPlan"
+                    accent="orange"
+                    resetKey={formResetKey}
+                  />
+                  <UploadPill
+                    label="MSDS"
+                    name="msMSDS"
+                    accent="orange"
+                    resetKey={formResetKey}
+                  />
+                  <UploadPill
+                    label="Indemnity"
+                    name="msIndemnity"
+                    accent="orange"
+                    resetKey={formResetKey}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+
+            {/* Pre-STS documents */}
+            <SectionTitle title="Pre-STS Documents" />
+            <div className="grid gap-4 md:grid-cols-3">
+              <ActionUpload
+                label="Joint Plan Operation"
+                name="jpo"
+                resetKey={formResetKey}
+              />
+              <ActionUpload
+                label="Risk Assessment"
+                name="riskAssessment"
+                resetKey={formResetKey}
+              />
+              <ActionUpload
+                label="Mooring Plan"
+                name="mooringPlan"
+                resetKey={formResetKey}
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <FileRow
+                label="Standing Order"
+                name="standingOrder"
+                resetKey={formResetKey}
+              />
+              <FileRow
+                label="Declaration at Sea"
+                name="DeclarationAtSea"
+                resetKey={formResetKey}
+              />
+            </div>
+
+            {/* STS Equipment */}
+            <SectionTitle title="STS Equipment" />
+            <div className="grid gap-4 md:grid-cols-2">
+              <FileRow
+                label="Equip Checklist (B)"
+                name="stsEquipChecklistPriorOps"
+                resetKey={formResetKey}
+              />
+              <FileRow
+                label="Equip Checklist (A)"
+                name="stsEquipChecklistAfterOps"
+                resetKey={formResetKey}
+              />
+            </div>
+
+            {/* Checklists 1–7 */}
+            <SectionTitle title="Checklists" />
+            <div className="grid gap-4 md:grid-cols-3">
+              <FileRow label="Checklist 1" name="checklist1" />
+              <FileRow label="Checklist 2" name="checklist2" />
+              <FileRow label="Checklist 3A & B" name="checklist3AB" />
+              <FileRow label="Checklist 4A-F" name="checklist4AF" />
+              <FileRow label="Checklist 5A-C" name="checklist5AC" />
+              <FileRow label="Checklist 6A & B" name="checklist6AB" />
+              <FileRow label="Checklist 7" name="checklist7" />
+            </div>
+
+            {/* Feedback & Logs */}
+            <SectionTitle title="Feedback & Logs" />
+            <div className="grid gap-4 md:grid-cols-3">
+              <FileRow
+                label="CHS feedback"
+                name="chsFeedback"
+                resetKey={formResetKey}
+              />
+              <FileRow
+                label="MS feedback"
+                name="msFeedback"
+                resetKey={formResetKey}
+              />
+              <FileRow
+                label="Hourly Checks"
+                name="hourlyChecks"
+                resetKey={formResetKey}
+              />
+              <FileRow
+                label="Rest hours CKL"
+                name="restHoursCKL"
+                resetKey={formResetKey}
+              />
+              <FileRow
+                label="Incident Reporting"
+                name="incidentReporting"
+                resetKey={formResetKey}
+              />
+              <FileRow
+                label="STS Timesheet"
+                name="stsTimesheet"
+                resetKey={formResetKey}
+              />
+            </div>
+
+            {/* Equipment / Remarks */}
+            <SectionTitle title="Equipment & Remarks" />
+            <div className="grid gap-6 md:grid-cols-2">
+              <MultiSelectDropdown
+                label="Equipment Used (available only)"
+                loading={loadingMasters}
+                name="equipments"
+                options={equipmentList
+                  .filter(
+                    (e) => (e.availabilityStatus || "AVAILABLE") === "AVAILABLE"
+                  )
+                  .map((e) => ({ label: e.equipmentName, value: e._id }))}
+                resetKey={formResetKey}
+              />
+              <TextAreaField
+                label="Remarks"
+                placeholder="Add remarks..."
+                name="remarks"
+              />
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-end gap-4 pt-6 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => {
+                  formRef.current?.reset();
+                  setStatus("INPROGRESS");
+                  setFlowDir("left");
+                  setFormResetKey((k) => k + 1);
+                }}
+                className="px-6 py-3 rounded-xl border border-white/20 bg-white/5 text-white hover:bg-white/10 transition"
+              >
+                Reset
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-6 py-3 rounded-xl bg-orange-500 text-white font-semibold shadow-lg shadow-orange-500/30 hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? "Submitting..." : "Submit Operation"}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   );
 }
 
-function DocRow({ label, tone = "navy" }) {
-  const toneClasses =
-    tone === "orange"
-      ? "bg-orange-500 text-white"
-      : "bg-slate-900 text-white";
-
+function SectionTitle({ title }) {
   return (
     <div className="flex items-center gap-3">
-      <span
-        className={`min-w-[110px] rounded-full px-4 py-2 text-sm font-semibold shadow ${toneClasses}`}
-      >
-        {label} :
-      </span>
-      <div className="flex-1 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/70">
-        Drag and drop
-      </div>
+      <h3 className="text-lg font-semibold text-white">{title}</h3>
+      <div className="flex-1 border-t border-white/10" />
     </div>
   );
 }
@@ -273,7 +674,7 @@ function DocRow({ label, tone = "navy" }) {
 const StatusDropdown = forwardRef(function StatusDropdown(
   { status, onSelect, show, setShow, statuses },
   ref
-){
+) {
   const active = statuses.find((s) => s.key === status);
   const tone = statusTone[status] || {
     dot: "bg-white",
@@ -299,12 +700,18 @@ const StatusDropdown = forwardRef(function StatusDropdown(
                 onClick={() => onSelect(item.key)}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition ${
                   item.key === status
-                    ? `${statusTone[item.key]?.pill || "bg-white/10 text-white"}`
-                    : `${statusTone[item.key]?.option || "text-white"} hover:bg-white/10`
+                    ? `${
+                        statusTone[item.key]?.pill || "bg-white/10 text-white"
+                      }`
+                    : `${
+                        statusTone[item.key]?.option || "text-white"
+                      } hover:bg-white/10`
                 }`}
               >
                 <span
-                  className={`mr-2 inline-block h-2 w-2 rounded-full ${statusTone[item.key]?.dot || "bg-white"}`}
+                  className={`mr-2 inline-block h-2 w-2 rounded-full ${
+                    statusTone[item.key]?.dot || "bg-white"
+                  }`}
                 />
                 {item.label}
               </button>
@@ -316,3 +723,377 @@ const StatusDropdown = forwardRef(function StatusDropdown(
   );
 });
 
+function Label({ children }) {
+  return (
+    <label className="block text-sm font-semibold text-white/80 mb-2">
+      {children}
+    </label>
+  );
+}
+
+function BaseInput({ children }) {
+  return (
+    <div className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/50 focus-within:ring-2 focus-within:ring-orange-500/40 focus-within:border-orange-500/40 transition">
+      {children}
+    </div>
+  );
+}
+
+function TextField({ label, placeholder, name }) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <BaseInput>
+        <input
+          type="text"
+          name={name}
+          className="w-full bg-transparent outline-none"
+          placeholder={placeholder}
+        />
+      </BaseInput>
+    </div>
+  );
+}
+
+function NumberField({ label, placeholder, name }) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <BaseInput>
+        <input
+          type="number"
+          name={name}
+          className="w-full bg-transparent outline-none"
+          placeholder={placeholder}
+        />
+      </BaseInput>
+    </div>
+  );
+}
+
+function DateField({ label, name }) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <BaseInput>
+        <input
+          type="date"
+          name={name}
+          className="w-full bg-transparent outline-none"
+        />
+      </BaseInput>
+    </div>
+  );
+}
+
+function SelectField({
+  label,
+  options = [],
+  loading = false,
+  name,
+  multiple = false,
+  placeholder,
+  size,
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="relative">
+        {!multiple && (
+          <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-orange-300">
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
+        )}
+        <select
+          name={name}
+          multiple={multiple}
+          size={size}
+          className={`w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-400/60 transition ${
+            multiple ? "appearance-auto min-h-[160px]" : "appearance-none"
+          }`}
+        >
+          {placeholder && !multiple && (
+            <option value="" className="text-slate-900">
+              {placeholder}
+            </option>
+          )}
+          {loading && <option className="text-slate-900">Loading...</option>}
+          {!loading &&
+            options.map((opt) => {
+              const value = typeof opt === "object" ? opt.value : opt;
+              const text = typeof opt === "object" ? opt.label : opt;
+              return (
+                <option
+                  key={value || text}
+                  value={value}
+                  className="text-slate-900"
+                >
+                  {text}
+                </option>
+              );
+            })}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function FileField({ name, resetKey }) {
+  const [fileName, setFileName] = useState("");
+  useEffect(() => {
+    setFileName("");
+  }, [resetKey]);
+  return (
+    <div className="w-56 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+      <input
+        type="file"
+        name={name}
+        accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+        className="w-full text-xs text-white"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          setFileName(f ? f.name : "");
+        }}
+      />
+      {fileName && (
+        <p className="mt-1 text-[11px] text-emerald-300 truncate">
+          Attached: {fileName}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function UploadPill({ label, name, accent = "sky", resetKey }) {
+  const [fileName, setFileName] = useState("");
+  useEffect(() => {
+    setFileName("");
+  }, [resetKey]);
+  const color =
+    accent === "orange"
+      ? "border-orange-400/50 text-orange-50 bg-orange-500/10 hover:bg-orange-500/15"
+      : "border-sky-400/50 text-sky-50 bg-sky-500/10 hover:bg-sky-500/15";
+  return (
+    <label
+      className={`flex items-center justify-between rounded-full border px-4 py-2 text-sm font-semibold cursor-pointer transition ${color}`}
+    >
+      <span>{label}</span>
+      <input
+        type="file"
+        name={name}
+        className="hidden"
+        accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          setFileName(f ? f.name : "");
+        }}
+      />
+      <span className="text-xs opacity-80">
+        {fileName ? "Attached" : "Upload"}
+      </span>
+    </label>
+  );
+}
+
+function ActionUpload({ label, name, resetKey }) {
+  const inputRef = useRef(null);
+  const [fileName, setFileName] = useState("");
+  useEffect(() => {
+    setFileName("");
+  }, [resetKey]);
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="flex items-center justify-center gap-3 rounded-2xl bg-linear-to-r from-sky-500/30 via-sky-400/20 to-orange-500/30 px-4 py-3 text-sm font-semibold text-white border border-white/10 shadow-lg hover:shadow-orange-500/20 transition"
+      >
+        <span>{label}</span>
+        <span className="text-xs opacity-80">
+          {fileName ? "Attached" : "(Upload)"}
+        </span>
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        name={name}
+        className="hidden"
+        accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          setFileName(f ? f.name : "");
+        }}
+      />
+      {fileName && (
+        <p className="text-[11px] text-emerald-300 truncate px-1">{fileName}</p>
+      )}
+    </div>
+  );
+}
+
+function FileRow({ label, name, resetKey }) {
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-white/90">{label}</label>
+      <FileField name={name} resetKey={resetKey} />
+    </div>
+  );
+}
+
+function TextAreaField({ label, placeholder, name }) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <textarea
+        name={name}
+        rows={4}
+        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40 transition outline-none"
+        placeholder={placeholder}
+      />
+    </div>
+  );
+}
+
+function MultiSelectDropdown({
+  label,
+  options = [],
+  loading = false,
+  name,
+  resetKey,
+}) {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState([]);
+
+  const toggle = (val) => {
+    setSelected((prev) =>
+      prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val]
+    );
+  };
+
+  const summaryLabel = (() => {
+    if (selected.length) return `${selected.length} selected`;
+    if (loading) return "Loading...";
+    return "Select equipment";
+  })();
+
+  useEffect(() => {
+    setSelected([]);
+  }, [resetKey]);
+
+  return (
+    <div className="space-y-2 relative">
+      <Label>{label}</Label>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex w-full items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-400/60 transition"
+        >
+          <span className="truncate">{summaryLabel}</span>
+          <svg
+            className={`h-4 w-4 text-orange-300 transition ${
+              open ? "rotate-180" : ""
+            }`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+
+        {open && (
+          <div className="absolute z-30 mt-2 w-full rounded-2xl border border-white/10 bg-slate-900/80 backdrop-blur shadow-2xl max-h-64 overflow-y-auto">
+            {loading && (
+              <div className="px-4 py-3 text-sm text-white/70">Loading...</div>
+            )}
+            {!loading && !options.length && (
+              <div className="px-4 py-3 text-sm text-white/60">
+                No available equipment
+              </div>
+            )}
+            {!loading &&
+              options.map((opt) => (
+                <label
+                  key={opt.value}
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-white/10 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-white/50 bg-transparent text-orange-400 focus:ring-orange-400"
+                    checked={selected.includes(opt.value)}
+                    onChange={() => toggle(opt.value)}
+                  />
+                  <span>{opt.label}</span>
+                </label>
+              ))}
+          </div>
+        )}
+      </div>
+      {/* Hidden inputs for form submission */}
+      {selected.map((val) => (
+        <input key={val} type="hidden" name={name} value={val} />
+      ))}
+    </div>
+  );
+}
+
+function ArrowIcon({ direction = "left" }) {
+  if (direction === "both") {
+    return (
+      <svg
+        className="h-6 w-6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="10"
+        viewBox="0 0 200 200"
+      >
+        <path
+          d="M120 40 L60 100 L120 160"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M80 40 L140 100 L80 160"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <line x1="60" y1="100" x2="140" y2="100" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  const isLeft = direction === "left";
+  return (
+    <svg
+      className={`h-6 w-6 ${isLeft ? "" : "rotate-180"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="10"
+      viewBox="0 0 200 200"
+    >
+      <path
+        d="M120 40 L60 100 L120 160"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <line x1="60" y1="100" x2="180" y2="100" strokeLinecap="round" />
+    </svg>
+  );
+}
