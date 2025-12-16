@@ -37,7 +37,8 @@ export default function LoginPage() {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage:
-            "url(https://res.cloudinary.com/dtqvb1uhi/image/upload/v1765800132/ocean-group-background_bzbnm3_mblquf.webp)",
+            "url('https://res.cloudinary.com/dtqvb1uhi/image/upload/v1765800132/ocean-group-background_bzbnm3_mblquf.webp')",
+           
         }}
       >
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />

@@ -6,23 +6,23 @@ import { usePathname } from "next/navigation";
 
 const statusTone = {
   INPROGRESS: {
-    dot: "bg-sky-400",
-    pill: "bg-sky-500/15 border-sky-400/40 text-sky-100",
+    dot: "bg-sky-600",
+    pill: "bg-sky-500/80 border-sky-400/40 text-sky-100",
     option: "text-sky-100",
   },
   COMPLETED: {
-    dot: "bg-emerald-400",
-    pill: "bg-emerald-500/15 border-emerald-400/40 text-emerald-100",
+    dot: "bg-emerald-600",
+    pill: "bg-emerald-500/80 border-emerald-400/40 text-emerald-100",
     option: "text-emerald-100",
   },
   PENDING: {
-    dot: "bg-amber-400",
-    pill: "bg-amber-500/15 border-amber-400/40 text-amber-100",
+    dot: "bg-amber-600",
+    pill: "bg-amber-500/80 border-amber-400/40 text-amber-100",
     option: "text-amber-100",
   },
   CANCELED: {
-    dot: "bg-red-400",
-    pill: "bg-red-500/15 border-red-400/40 text-red-100",
+    dot: "bg-red-600",
+    pill: "bg-red-500/80 border-red-400/40 text-red-100",
     option: "text-red-100",
   },
 };
@@ -211,6 +211,7 @@ export default function NewOperationPage() {
   return (
     <div
       className="min-h-screen bg-transparent text-white flex"
+      //background image for the form
       style={{
         backgroundImage:
           "url('https://res.cloudinary.com/dtqvb1uhi/image/upload/v1765800114/gettyimages-1317779371-612x612_nurxsk.jpg')",
@@ -286,7 +287,7 @@ export default function NewOperationPage() {
                 <span className="text-lg">←</span>
               </Link>
               <div>
-                <p className="text-sm uppercase tracking-[0.25em] text-sky-300">
+                <p className="text-sm uppercase tracking-[0.25em] text--200 font-semibold weight-bold">
                   STS Management System
                 </p>
                 <h1 className="text-2xl font-bold">New Operation</h1>
@@ -356,10 +357,11 @@ export default function NewOperationPage() {
                 name="Operation_Ref_No"
               />
               <SelectField
-                label="Type of operation"
-                options={["STS", "Ship to Ship", "Lightering"]}
-                name="typeOfOperation"
-              />
+                  label="Type of operation"
+                  name="typeOfOperation"
+                  placeholder="Select type of operation"
+                  options={["Ship to Ship", "Lightering"]}
+                />
               <TextField
                 label="Client"
                 placeholder="Enter client name"
@@ -403,12 +405,12 @@ export default function NewOperationPage() {
 
             {/* CHS / MS block */}
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-md shadow-inner space-y-6">
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center justify-between gap-4 ">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-200 font-bold">
+                  <div className="h-10 w-10 rounded-xl bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-200 font-bold" title="Mother Ship">
                     CHS
                   </div>
-                  <span className="text-sm text-white/70">Document Bundle</span>
+                  
                 </div>
                 <button
                   type="button"
@@ -420,10 +422,10 @@ export default function NewOperationPage() {
                   <ArrowIcon direction={flowDir} />
                 </button>
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-orange-500/15 border border-orange-400/30 flex items-center justify-center text-orange-200 font-bold">
+                  <div className="h-10 w-10 rounded-xl bg-orange-500/15 border border-orange-400/30 flex items-center justify-center text-orange-200 font-bold" title="Sister Ship">
                     MS
                   </div>
-                  <span className="text-sm text-white/70">Document Bundle</span>
+                  
                 </div>
               </div>
 
@@ -543,11 +545,7 @@ export default function NewOperationPage() {
                 name="standingOrder"
                 resetKey={formResetKey}
               />
-              <FileRow
-                label="Declaration at Sea"
-                name="DeclarationAtSea"
-                resetKey={formResetKey}
-              />
+             
             </div>
 
             {/* STS Equipment */}
@@ -575,6 +573,11 @@ export default function NewOperationPage() {
               <FileRow label="Checklist 5A-C" name="checklist5AC" />
               <FileRow label="Checklist 6A & B" name="checklist6AB" />
               <FileRow label="Checklist 7" name="checklist7" />
+              <FileRow
+                label="Declaration at Sea"
+                name="DeclarationAtSea"
+                resetKey={formResetKey}
+              />
             </div>
 
             {/* Feedback & Logs */}
@@ -795,9 +798,13 @@ function SelectField({
   placeholder,
   size,
 }) {
+  const [isPlaceholderSelected, setIsPlaceholderSelected] = useState(
+    !multiple && !!placeholder
+  );
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
+
       <div className="relative">
         {!multiple && (
           <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-orange-300">
@@ -816,27 +823,46 @@ function SelectField({
             </svg>
           </div>
         )}
+
         <select
           name={name}
           multiple={multiple}
           size={size}
-          className={`w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-400/60 transition ${
+          defaultValue={!multiple ? "" : undefined}
+          onChange={(e) => {
+            if (!multiple && placeholder) {
+              setIsPlaceholderSelected(e.target.value === "");
+            }
+          }}
+          className={`w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm shadow-lg shadow-black/20 outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-400/60 transition ${
             multiple ? "appearance-auto min-h-[160px]" : "appearance-none"
+          } ${
+            isPlaceholderSelected && !multiple
+              ? "text-white/60 font-normal"
+              : "text-white font-semibold"
           }`}
         >
+          {/* Placeholder (ONLY for single select) */}
           {placeholder && !multiple && (
-            <option value="" className="text-slate-900">
+            <option value="" disabled hidden className="text-slate-900">
               {placeholder}
             </option>
           )}
-          {loading && <option className="text-slate-900">Loading...</option>}
+
+          {loading && (
+            <option disabled className="text-slate-900">
+              Loading...
+            </option>
+          )}
+
           {!loading &&
             options.map((opt) => {
               const value = typeof opt === "object" ? opt.value : opt;
               const text = typeof opt === "object" ? opt.label : opt;
+
               return (
                 <option
-                  key={value || text}
+                  key={value ?? text}
                   value={value}
                   className="text-slate-900"
                 >
@@ -850,26 +876,113 @@ function SelectField({
   );
 }
 
+
 function FileField({ name, resetKey }) {
   const [fileName, setFileName] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const inputRef = useRef(null);
+
   useEffect(() => {
     setFileName("");
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
   }, [resetKey]);
+
+  const handleFiles = (files) => {
+    const file = files?.[0];
+    if (!file || !inputRef.current) return;
+
+    // Attach dropped file(s) to the hidden input so FormData still works
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    inputRef.current.files = dataTransfer.files;
+    setFileName(file.name);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer?.files?.length) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
+  const handleRemove = () => {
+    setFileName("");
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+  };
+
   return (
-    <div className="w-56 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+    <div className="w-full max-w-xs text-sm text-white/80">
+      {/* Hidden file input (still used by the browser / FormData) */}
       <input
+        ref={inputRef}
         type="file"
         name={name}
         accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-        className="w-full text-xs text-white"
+        className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
           setFileName(f ? f.name : "");
         }}
       />
+
+      {/* Drag and drop surface */}
+      <div
+        className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 cursor-pointer transition 
+        ${
+          isDragging
+            ? "border-orange-400 bg-orange-500/10"
+            : "border-white/15 bg-white/5 hover:bg-white/10"
+        }`}
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDragging(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDragging(false);
+        }}
+        onDrop={handleDrop}
+      >
+        <div className="flex flex-col">
+          <span className="text-xs font-semibold">
+            {fileName || "Drag & drop file, or click to browse"}
+          </span>
+          {!fileName && (
+            <span className="mt-0.5 text-[11px] text-white/60">
+              PDF, images, or docs
+            </span>
+          )}
+        </div>
+
+        {fileName ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRemove();
+            }}
+            className="ml-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/15 text-xs text-white hover:bg-red-500/80 hover:text-white transition"
+            aria-label="Remove file"
+          >
+            ×
+          </button>
+        ) : (
+          <span className="text-xs text-orange-300">Browse</span>
+        )}
+      </div>
+
       {fileName && (
         <p className="mt-1 text-[11px] text-emerald-300 truncate">
-          Attached: {fileName}
+          Selected: {fileName}
         </p>
       )}
     </div>
@@ -878,19 +991,31 @@ function FileField({ name, resetKey }) {
 
 function UploadPill({ label, name, accent = "sky", resetKey }) {
   const [fileName, setFileName] = useState("");
+  const inputRef = useRef(null);
+
   useEffect(() => {
     setFileName("");
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
   }, [resetKey]);
+
+  const handleRemove = () => {
+    setFileName("");
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+  };
+
   const color =
     accent === "orange"
       ? "border-orange-400/50 text-orange-50 bg-orange-500/10 hover:bg-orange-500/15"
       : "border-sky-400/50 text-sky-50 bg-sky-500/10 hover:bg-sky-500/15";
   return (
-    <label
-      className={`flex items-center justify-between rounded-full border px-4 py-2 text-sm font-semibold cursor-pointer transition ${color}`}
-    >
-      <span>{label}</span>
+    <div className="flex flex-col gap-1">
+      {/* Hidden input that actually holds the file for FormData */}
       <input
+        ref={inputRef}
         type="file"
         name={name}
         className="hidden"
@@ -900,10 +1025,35 @@ function UploadPill({ label, name, accent = "sky", resetKey }) {
           setFileName(f ? f.name : "");
         }}
       />
-      <span className="text-xs opacity-80">
-        {fileName ? "Attached" : "Upload"}
-      </span>
-    </label>
+
+      {/* Clickable pill */}
+      <button
+        type="button"
+        className={`flex items-center justify-between rounded-full border px-4 py-2 text-sm font-semibold cursor-pointer transition ${color}`}
+        onClick={() => inputRef.current?.click()}
+      >
+        <span>{label}</span>
+        <span className="flex items-center gap-2 text-xs opacity-80">
+          {fileName ? (
+            <>
+              <span className="truncate max-w-[110px]">{fileName}</span>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemove();
+                }}
+                className="flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-[10px] hover:bg-red-500/80 hover:text-white"
+                aria-label="Remove file"
+              >
+                ×
+              </span>
+            </>
+          ) : (
+            "Upload"
+          )}
+        </span>
+      </button>
+    </div>
   );
 }
 
