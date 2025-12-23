@@ -12,7 +12,14 @@ const sidebarTabs = [
       { key: "training-record", label: "Training Record", href: "/qhse/training/create/record" },
     ],
   },
-  { key: "drills", label: "Drills" },
+  {
+    key: "drills",
+    label: "Drills",
+    submodules: [
+      { key: "drill-plan", label: "Drill Plan", href: "/qhse/drills/create/plan" },
+      { key: "drill-report", label: "Drill Report", href: "/qhse/drills/create/report" },
+    ],
+  },
   { key: "forms", label: "Forms & checklist" },
   { key: "defects", label: "Defects list" },
   { key: "best-practices", label: "Best practices" },
