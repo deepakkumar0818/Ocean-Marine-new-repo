@@ -8,7 +8,6 @@ const equipmentUsageSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Operation-level usage tracking
     startTime: {
       type: Date,
       required: true,
@@ -34,12 +33,10 @@ const equipmentUsageSchema = new mongoose.Schema(
 
 const stsOperationSchema = new mongoose.Schema(
   {
-    // VERSIONING
     parentOperationId: { type: mongoose.Schema.Types.ObjectId, required: true },
     version: { type: Number, default: 1 },
     isLatest: { type: Boolean, default: true },
 
-    // GENERAL INFORMATION
     Operation_Ref_No: {
       type: String,
       required: true,
@@ -77,14 +74,8 @@ const stsOperationSchema = new mongoose.Schema(
     quantity: Number,
     typeOfCargo: { type: mongoose.Schema.Types.ObjectId, ref: "CargoType" },
 
-    // ================================
-    // EQUIPMENT USAGE (KEY CHANGE)
-    // ================================
     equipments: [equipmentUsageSchema],
 
-    // =========================
-    // CHS DOCUMENT GROUP
-    // =========================
     chs: String,
     chsSSQ: String,
     chsQ88: String,
@@ -93,9 +84,6 @@ const stsOperationSchema = new mongoose.Schema(
     chsMooringArrangement: String,
     chsIndemnity: String,
 
-    // =========================
-    // MS DOCUMENT GROUP
-    // =========================
     ms: String,
     msSSQ: String,
     msQ88: String,
@@ -104,18 +92,12 @@ const stsOperationSchema = new mongoose.Schema(
     msMooringArrangement: String,
     msIndemnity: String,
 
-    // =========================
-    // PRE-STS DOCUMENTS
-    // =========================
     jpo: String,
     riskAssessment: String,
     mooringPlan: String,
 
     DeclarationAtSea: String,
 
-    // CHECKLISTS
-    // =========================
-    // =========================
     checklist1: String,
     checklist2: String,
     checklist3AB: String,
@@ -128,9 +110,7 @@ const stsOperationSchema = new mongoose.Schema(
     standingOrder: String,
     stsEquipChecklistPriorOps: String,
     stsEquipChecklistAfterOps: String,
-    // =========================
-    // FEEDBACK
-    // =========================
+
     chsFeedback: String,
     msFeedback: String,
     hourlyChecks: String,

@@ -1,19 +1,12 @@
 import mongoose from "mongoose";
 
-/* ----------------------------------------
-   COUNTER SCHEMA (SAME FILE)
------------------------------------------ */
 const CounterSchema = new mongoose.Schema({
   key: { type: String, required: true, unique: true },
   seq: { type: Number, default: 0 },
 });
 
-const Counter =
-  mongoose.models.Counter || mongoose.model("Counter", CounterSchema);
+const Counter = mongoose.models.Counter || mongoose.model("Counter", CounterSchema);
 
-/* ----------------------------------------
-   MONTHLY PLAN SUB-SCHEMA
------------------------------------------ */
 const MonthlyTrainingSchema = new mongoose.Schema(
   {
     plannedDate: {
@@ -40,16 +33,13 @@ const MonthlyTrainingSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["Draft", "Approved"],
-      default: "Draft",
+      default: "Approved",
       index: true,
     },
   },
   { _id: false }
 );
 
-/* ----------------------------------------
-   TRAINING PLAN (ANNUAL MATRIX)
------------------------------------------ */
 const TrainingPlanSchema = new mongoose.Schema(
   {
     formCode: {
@@ -58,7 +48,6 @@ const TrainingPlanSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Derived automatically from planItems[].plannedDate
     year: {
       type: Number,
       index: true,

@@ -1,8 +1,5 @@
 import mongoose from "mongoose";
 
-/* ----------------------------------------
-   COUNTER SCHEMA (SAME FILE)
------------------------------------------ */
 const CounterSchema = new mongoose.Schema({
   key: { type: String, required: true, unique: true },
   seq: { type: Number, default: 0 },
@@ -11,9 +8,6 @@ const CounterSchema = new mongoose.Schema({
 const Counter =
   mongoose.models.Counter || mongoose.model("Counter", CounterSchema);
 
-/* ----------------------------------------
-   ATTENDANCE SUB-SCHEMA
------------------------------------------ */
 const AttendanceSchema = new mongoose.Schema(
   {
     traineeName: {
@@ -33,7 +27,7 @@ const AttendanceSchema = new mongoose.Schema(
     },
 
     signature: {
-      type: String, // file path / image URL
+      type: String, 
     },
   },
   { _id: false }
@@ -121,10 +115,8 @@ TrainingRecordSchema.pre("save", async function (next) {
 
       this.formCode = `QAF-OFD-${String(counter.seq).padStart(3, "0")}`;
     }
-
-    next();
   } catch (error) {
-    next(error);
+    console.error("Training Record Pre-Save Error:", error);
   }
 });
 
