@@ -7,5 +7,4 @@ const locationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Location ||
-  mongoose.model("Location", locationSchema);
+export default mongoose.models.Location || mongoose.model("Location", locationSchema);

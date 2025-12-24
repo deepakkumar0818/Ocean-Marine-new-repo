@@ -21,9 +21,14 @@ const sidebarTabs = [
     ],
   },
   { key: "forms", label: "Forms & checklist" },
-  { key: "defects", label: "Defects list" },
+  { key: "defects", label: "Defects list",
+    submodules: [
+      { key: "defects-create", label: "Create defect", href: "/qhse/defects-list/create/plan" },
+      { key: "defects-list", label: "Defects list", href: "/qhse/defects-list/create/list" },
+    ],
+  },
   { key: "best-practices", label: "Best practices" },
-  { key: "near-miss", label: "Near-miss reporting" },
+  { key: "near-miss", label: "Near-miss reporting", href: "/qhse/near-miss" },
   { key: "moc", label: "MOC" },
   {
     key: "due-diligence",
@@ -86,16 +91,29 @@ export default function QhsePage() {
             <div className="space-y-2">
               {sidebarTabs.map((tab) => (
                 <div key={tab.key} className="space-y-1">
-                  <button
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`block w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
-                      activeTab === tab.key
-                        ? "bg-orange-500 text-white shadow-lg shadow-orange-500/40"
-                        : "text-white/90 hover:bg-white/10 hover:text-white border border-white/5"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
+                  {tab.href ? (
+                    <Link
+                      href={tab.href}
+                      className={`block w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
+                        activeTab === tab.key
+                          ? "bg-orange-500 text-white shadow-lg shadow-orange-500/40"
+                          : "text-white/90 hover:bg-white/10 hover:text-white border border-white/5"
+                      }`}
+                    >
+                      {tab.label}
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => setActiveTab(tab.key)}
+                      className={`block w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
+                        activeTab === tab.key
+                          ? "bg-orange-500 text-white shadow-lg shadow-orange-500/40"
+                          : "text-white/90 hover:bg-white/10 hover:text-white border border-white/5"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  )}
                   {tab.submodules && activeTab === tab.key && (
                     <div className="ml-4 space-y-1">
                       {tab.submodules.map((sub) => (

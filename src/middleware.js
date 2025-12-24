@@ -4,22 +4,29 @@ export function middleware(request) {
   const token = request.cookies.get("access_token")?.value;
   const { pathname } = request.nextUrl;
 
-  // Public routes (no auth required)
-  const publicRoutes = [
-    "/login",
-    "/signup",
+  const publicApiRoutes = [
+    "/api/near-miss-form/create",
     "/api/auth/login",
     "/api/auth/signup",
   ];
 
-  if (publicRoutes.includes(pathname)) {
+  if (publicApiRoutes.includes(pathname)) {
+    return NextResponse.next();
+  }
+  
+  const publicPages = ["/login", "/signup"];
+
+  if (publicPages.includes(pathname)) {
     if (token) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.next();
   }
 
-  // Protected routes — require authentication
+  /* ==========================
+     3️⃣ Protected Pages
+     (auth required)
+  ========================== */
   const protectedRoutes = [
     "/dashboard",
     "/operations",
@@ -29,7 +36,6 @@ export function middleware(request) {
     "/hr",
   ];
 
-  // Check if the current path is protected
   const isProtected = protectedRoutes.some((route) =>
     pathname.startsWith(route)
   );
@@ -41,6 +47,9 @@ export function middleware(request) {
   return NextResponse.next();
 }
 
+/* ==========================
+   4️⃣ Middleware Matcher
+========================== */
 export const config = {
   matcher: [
     "/dashboard/:path*",
@@ -51,5 +60,7 @@ export const config = {
     "/hr/:path*",
     "/login",
     "/signup",
+    "/api/near-miss-form/create",
+    "/api/auth/:path*",
   ],
 };
