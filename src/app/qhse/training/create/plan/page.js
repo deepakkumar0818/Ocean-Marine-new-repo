@@ -24,7 +24,7 @@ const MONTHS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
-export default function TrainingPlanPage() {
+export default function TrainingPlanPage({ hideSidebar = false }) {
   const pathname = usePathname();
   const currentYear = new Date().getFullYear();
   const initialYear = currentYear;
@@ -125,50 +125,8 @@ export default function TrainingPlanPage() {
     currentMonthData.instructor.trim() ||
     currentMonthData.description.trim();
 
-  return (
-    <div className="min-h-screen bg-transparent text-white flex">
-      {/* Left Sidebar - same as QHSE main page */}
-      <div className="fixed left-0 top-0 h-full bg-slate-900/98 border-r border-white/20 shadow-2xl backdrop-blur-md z-50" style={{ width: "280px" }}>
-        <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-6 border-b border-white/10">
-            <h2 className="text-lg font-bold text-white">Navigation</h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-2">
-              <div className="space-y-1">
-                <div className="px-4 py-3 rounded-xl text-sm font-medium bg-orange-500 text-white shadow-lg shadow-orange-500/40">
-                  Training
-                </div>
-                <div className="ml-4 space-y-1">
-                  <Link
-                    href="/qhse/training/create/plan"
-                    className={`block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
-                      pathname === "/qhse/training/create/plan"
-                        ? "bg-orange-400/30 text-white border border-orange-400/50"
-                        : "text-white/80 hover:bg-white/10 hover:text-white border border-white/5"
-                    }`}
-                  >
-                    Training Plan
-                  </Link>
-                  <Link
-                    href="/qhse/training/create/record"
-                    className={`block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
-                      pathname === "/qhse/training/create/record"
-                        ? "bg-orange-400/30 text-white border border-orange-400/50"
-                        : "text-white/80 hover:bg-white/10 hover:text-white border border-white/5"
-                    }`}
-                  >
-                    Training Record
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 ml-72">
+  const content = (
+    <div className="flex-1">
         <div className="mx-auto max-w-6xl px-6 py-10 space-y-6">
           <header className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -354,6 +312,58 @@ export default function TrainingPlanPage() {
             </div>
           </form>
         </div>
+      </div>
+  );
+
+  if (hideSidebar) {
+    return content;
+  }
+
+  return (
+    <div className="min-h-screen bg-transparent text-white flex">
+      {/* Left Sidebar - same as QHSE main page */}
+      <div className="fixed left-0 top-0 h-full bg-slate-900/98 border-r border-white/20 shadow-2xl backdrop-blur-md z-50" style={{ width: "280px" }}>
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <h2 className="text-lg font-bold text-white">Navigation</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <div className="px-4 py-3 rounded-xl text-sm font-medium bg-orange-500 text-white shadow-lg shadow-orange-500/40">
+                  Training
+                </div>
+                <div className="ml-4 space-y-1">
+                  <Link
+                    href="/qhse/training/create/plan"
+                    className={`block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
+                      pathname === "/qhse/training/create/plan"
+                        ? "bg-orange-400/30 text-white border border-orange-400/50"
+                        : "text-white/80 hover:bg-white/10 hover:text-white border border-white/5"
+                    }`}
+                  >
+                    Training Plan
+                  </Link>
+                  <Link
+                    href="/qhse/training/create/record"
+                    className={`block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
+                      pathname === "/qhse/training/create/record"
+                        ? "bg-orange-400/30 text-white border border-orange-400/50"
+                        : "text-white/80 hover:bg-white/10 hover:text-white border border-white/5"
+                    }`}
+                  >
+                    Training Record
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 ml-72">
+        {content}
       </div>
     </div>
   );

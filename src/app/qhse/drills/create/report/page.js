@@ -21,7 +21,7 @@ function getYears() {
 
 const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
 
-export default function DrillsReportPage() {
+export default function DrillsReportPage({ hideSidebar = false }) {
   const pathname = usePathname();
   const currentYear = new Date().getFullYear();
   const initialYear = currentYear;
@@ -141,70 +141,9 @@ export default function DrillsReportPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-transparent text-white flex">
-      {/* Left Sidebar - same as Drill Plan */}
-      <div className="fixed left-0 top-0 h-full bg-slate-900/98 border-r border-white/20 shadow-2xl backdrop-blur-md z-50" style={{ width: "280px" }}>
-        <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-6 border-b border-white/10">
-            <h2 className="text-lg font-bold text-white">Navigation</h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-2">
-              <div className="space-y-1">
-                <div className="px-4 py-3 rounded-xl text-sm font-medium bg-orange-500 text-white shadow-lg shadow-orange-500/40">
-                  Drills
-                </div>
-                <div className="ml-4 space-y-1">
-                  <Link
-                    href="/qhse/drills/create/plan"
-                    className={`block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
-                      pathname === "/qhse/drills/create/plan"
-                        ? "bg-orange-400/30 text-white border border-orange-400/50"
-                        : "text-white/80 hover:bg-white/10 hover:text-white border border-white/5"
-                    }`}
-                  >
-                    Drill Plan
-                  </Link>
-                  <Link
-                    href="/qhse/drills/create/report"
-                    className={`block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
-                      pathname === "/qhse/drills/create/report"
-                        ? "bg-orange-400/30 text-white border border-orange-400/50"
-                        : "text-white/80 hover:bg-white/10 hover:text-white border border-white/5"
-                    }`}
-                  >
-                    Drill Report
-                  </Link>
-                  {/* Quarter sub-items - show when on report page */}
-                  {pathname === "/qhse/drills/create/report" && (
-                    <div className="ml-4 space-y-1 mt-2">
-                      {QUARTERS.map((quarter, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => setSelectedQuarter(index)}
-                          className={`block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
-                            selectedQuarter === index
-                              ? "bg-orange-400/30 text-white border border-orange-400/50"
-                              : "text-white/60 hover:bg-white/10 hover:text-white border border-white/5"
-                          }`}
-                        >
-                          {quarter}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 ml-72">
-        <div className="mx-auto max-w-6xl px-6 py-10 space-y-6">
+  const content = (
+    <div className="flex-1">
+      <div className="mx-auto max-w-6xl px-6 py-10 space-y-6">
           <header className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Link
@@ -413,6 +352,58 @@ export default function DrillsReportPage() {
             </div>
           </form>
         </div>
+      </div>
+  );
+
+  if (hideSidebar) {
+    return content;
+  }
+
+  return (
+    <div className="min-h-screen bg-transparent text-white flex">
+      {/* Left Sidebar - same as Drill Plan */}
+      <div className="fixed left-0 top-0 h-full bg-slate-900/98 border-r border-white/20 shadow-2xl backdrop-blur-md z-50" style={{ width: "280px" }}>
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <h2 className="text-lg font-bold text-white">Navigation</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <div className="px-4 py-3 rounded-xl text-sm font-medium bg-orange-500 text-white shadow-lg shadow-orange-500/40">
+                  Drills
+                </div>
+                <div className="ml-4 space-y-1">
+                  <Link
+                    href="/qhse/drills/create/plan"
+                    className={`block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
+                      pathname === "/qhse/drills/create/plan"
+                        ? "bg-orange-400/30 text-white border border-orange-400/50"
+                        : "text-white/80 hover:bg-white/10 hover:text-white border border-white/5"
+                    }`}
+                  >
+                    Drill Plan
+                  </Link>
+                  <Link
+                    href="/qhse/drills/create/report"
+                    className={`block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
+                      pathname === "/qhse/drills/create/report"
+                        ? "bg-orange-400/30 text-white border border-orange-400/50"
+                        : "text-white/80 hover:bg-white/10 hover:text-white border border-white/5"
+                    }`}
+                  >
+                    Drill Report
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 ml-72">
+        {content}
       </div>
     </div>
   );
