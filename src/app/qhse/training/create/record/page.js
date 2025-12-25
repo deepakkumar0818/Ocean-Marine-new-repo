@@ -38,7 +38,7 @@ function monthFromDateString(dateStr) {
   return d.getMonth(); // 0–11
 }
 
-export default function TrainingRecordPage() {
+export default function TrainingRecordPage({ hideSidebar = false }) {
   const [availableYears, setAvailableYears] = useState([]);
   const [loadingYears, setLoadingYears] = useState(true);
   const [year, setYear] = useState(null);
@@ -179,45 +179,8 @@ export default function TrainingRecordPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-transparent text-white flex">
-      {/* Left Sidebar */}
-      <div
-        className="fixed left-0 top-0 h-full bg-slate-900/98 border-r border-white/20 shadow-2xl backdrop-blur-md z-50"
-        style={{ width: "280px" }}
-      >
-        <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-6 border-b border-white/10">
-            <h2 className="text-lg font-bold text-white">Navigation</h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-2">
-              <div className="space-y-1">
-                <div className="px-4 py-3 rounded-xl text-sm font-medium bg-orange-500 text-white shadow-lg shadow-orange-500/40">
-                  Training
-                </div>
-                <div className="ml-4 space-y-1">
-                  <Link
-                    href="/qhse/training/create/plan"
-                    className="block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 text-white/80 hover:bg-white/10 hover:text-white border border-white/5"
-                  >
-                    Training Plan
-                  </Link>
-                  <Link
-                    href="/qhse/training/create/record"
-                    className="block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 bg-orange-400/30 text-white border border-orange-400/50"
-                  >
-                    Training Record
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 ml-72">
+  const content = (
+    <div className="flex-1">
         <div className="mx-auto max-w-6xl px-6 py-10 space-y-6">
           <header className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -396,7 +359,7 @@ export default function TrainingRecordPage() {
                     <button
                       type="button"
                       onClick={() => setCreatingFor(null)}
-                      className="text-xs text-slate-200 hover:text-white"
+                      className="text-xs text-slate-200 hover:text-white cursor-pointer"
                     >
                       ✕ Close
                     </button>
@@ -460,7 +423,7 @@ export default function TrainingRecordPage() {
                     <button
                       type="submit"
                       disabled={savingRecord}
-                      className="inline-flex items-center rounded-full bg-orange-500 hover:bg-orange-400 px-5 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="inline-flex items-center rounded-full cursor-pointer bg-orange-500 hover:bg-orange-400 px-5 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {savingRecord ? "Saving..." : "Create Record"}
                     </button>
@@ -470,6 +433,53 @@ export default function TrainingRecordPage() {
             </div>
           </div>
         </div>
+      </div>
+  );
+
+  if (hideSidebar) {
+    return content;
+  }
+
+  return (
+    <div className="min-h-screen bg-transparent text-white flex">
+      {/* Left Sidebar */}
+      <div
+        className="fixed left-0 top-0 h-full bg-slate-900/98 border-r border-white/20 shadow-2xl backdrop-blur-md z-50"
+        style={{ width: "280px" }}
+      >
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <h2 className="text-lg font-bold text-white">Navigation</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <div className="px-4 py-3 rounded-xl text-sm font-medium bg-orange-500 text-white shadow-lg shadow-orange-500/40">
+                  Training
+                </div>
+                <div className="ml-4 space-y-1">
+                  <Link
+                    href="/qhse/training/create/plan"
+                    className="block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 text-white/80 hover:bg-white/10 hover:text-white border border-white/5"
+                  >
+                    Training Plan
+                  </Link>
+                  <Link
+                    href="/qhse/training/create/record"
+                    className="block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 bg-orange-400/30 text-white border border-orange-400/50"
+                  >
+                    Training Record
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 ml-72">
+        {content}
       </div>
     </div>
   );
