@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/config/connection";
 import DrillReport from "@/lib/mongodb/models/DrillReport";
-import DrillPlan from "@/lib/mongodb/models/DrillPlan";
+
+const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
+const getQuarterFromDate = (date) => {
+  const d = new Date(date);
+  const m = d.getMonth();
+  return QUARTERS[Math.floor(m / 3)];
+};
+
 
 export async function POST(req) {
   try {
@@ -9,7 +16,6 @@ export async function POST(req) {
     const body = await req.json();
 
     const {
-      drillPlanId,
       drillNo,
       drillDate,
       location,
@@ -45,20 +51,10 @@ export async function POST(req) {
       );
     }
 
-    // If drillPlanId is provided, verify the plan exists
-    if (drillPlanId) {
-      const plan = await DrillPlan.findById(drillPlanId);
-
-      if (!plan) {
-        return NextResponse.json(
-          { success: false, error: "Drill plan not found" },
-          { status: 404 }
-        );
-      }
-    }
+    const resolvedQuarter =
+      quarter || (drillDate ? getQuarterFromDate(drillDate) : null);
 
     const report = await DrillReport.create({
-      drillPlanId: drillPlanId || null,
       drillNo: drillNo.trim(),
       drillDate: new Date(drillDate),
       location: location?.trim() || "",
@@ -66,7 +62,7 @@ export async function POST(req) {
       participants: validParticipants,
       incidentProgression: incidentProgression?.trim() || "",
       year: year ? Number.parseInt(year, 10) : new Date(drillDate).getFullYear(),
-      quarter: quarter || null,
+      quarter: resolvedQuarter,
       status: "Draft",
     });
 

@@ -43,12 +43,6 @@ const DrillReportSchema = new mongoose.Schema(
       index: true,
     },
 
-    drillPlanId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "DrillPlan",
-      index: true,
-    },
-
     drillNo: {
       type: String,
       required: true,

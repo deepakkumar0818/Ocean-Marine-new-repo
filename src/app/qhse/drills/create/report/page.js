@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -21,16 +21,30 @@ function getYears() {
 
 const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
 
+// Normalize a stored date to an input-friendly yyyy-mm-dd without timezone shift
+const toDateInputValue = (value) => {
+  const d = new Date(value);
+  const tzOffset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tzOffset).toISOString().slice(0, 10);
+};
+
 export default function DrillsReportPage({ hideSidebar = false }) {
   const pathname = usePathname();
   const currentYear = new Date().getFullYear();
+  const initialYears = getYears();
   const initialYear = currentYear;
 
+  const [availableYears, setAvailableYears] = useState(initialYears);
+  const [loadingYears, setLoadingYears] = useState(true);
   const [year, setYear] = useState(initialYear);
   const [selectedQuarter, setSelectedQuarter] = useState(0);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
+  const [plan, setPlan] = useState(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [planError, setPlanError] = useState(null);
+  const [creatingFor, setCreatingFor] = useState(null);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -43,6 +57,60 @@ export default function DrillsReportPage({ hideSidebar = false }) {
     ],
     incidentProgression: "",
   });
+
+  // Load available years on mount
+  useEffect(() => {
+    const loadYears = async () => {
+      setLoadingYears(true);
+      try {
+        const res = await fetch("/api/qhse/drill/plan");
+        const data = await res.json();
+        if (res.ok && data.success && Array.isArray(data.data)) {
+          const merged = Array.from(
+            new Set([...initialYears, ...data.data])
+          ).sort((a, b) => b - a);
+          setAvailableYears(merged);
+          if (!merged.includes(year)) {
+            setYear(merged[0]);
+          }
+        }
+      } catch (err) {
+        // ignore
+      } finally {
+        setLoadingYears(false);
+      }
+    };
+    loadYears();
+  }, []);
+
+  // Load approved plan for the selected year
+  useEffect(() => {
+    let active = true;
+    const fetchPlan = async () => {
+      setPlanLoading(true);
+      setPlanError(null);
+      setCreatingFor(null);
+      try {
+        const res = await fetch(`/api/qhse/drill/plan?year=${year}`);
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "No approved plan for this year");
+        }
+        if (active) setPlan(data.data);
+      } catch (err) {
+        if (active) {
+          setPlan(null);
+          setPlanError(err.message);
+        }
+      } finally {
+        if (active) setPlanLoading(false);
+      }
+    };
+    fetchPlan();
+    return () => {
+      active = false;
+    };
+  }, [year]);
 
   const handleFieldChange = (field, value) => {
     setFormData((prev) => ({
@@ -77,6 +145,20 @@ export default function DrillsReportPage({ hideSidebar = false }) {
       ...prev,
       participants: prev.participants.filter((_, i) => i !== index),
     }));
+  };
+
+  const applyPlanItem = (item) => {
+    if (!item) return;
+    const qIndex = QUARTERS.indexOf(item.quarter);
+    if (qIndex >= 0) {
+      setSelectedQuarter(qIndex);
+    }
+    setFormData((prev) => ({
+      ...prev,
+      drillDate: toDateInputValue(item.plannedDate),
+      drillScenario: item.topic || prev.drillScenario,
+    }));
+    setCreatingFor(item);
   };
 
   const handleSubmit = async (e) => {
@@ -162,9 +244,11 @@ export default function DrillsReportPage({ hideSidebar = false }) {
                   QHSE / Drills
                 </p>
                 <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-bold">Drill Record</h1>
+                  <h1 className="text-2xl font-bold">Drill Report</h1>
                   <div className="inline-block px-3 py-1 rounded-lg bg-orange-500/20 border border-orange-400/50">
-                    <span className="text-sm font-semibold text-orange-300">{year}</span>
+                    <span className="text-sm font-semibold text-orange-300">
+                      {year || "—"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -176,18 +260,86 @@ export default function DrillsReportPage({ hideSidebar = false }) {
               </span>
               <select
                 className="bg-white/5 border border-white/20 rounded-full px-3 py-1 text-xs tracking-widest uppercase focus:outline-none"
-                value={year}
+                value={year || ""}
                 onChange={(e) => setYear(Number(e.target.value))}
+                disabled={loadingYears || availableYears.length === 0}
               >
-                {getYears().map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
+                {loadingYears ? (
+                  <option>Loading...</option>
+                ) : availableYears.length === 0 ? (
+                  <option>No data</option>
+                ) : (
+                  availableYears.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
           </header>
 
+          {/* Plan list and create-report trigger */}
+          <div className="rounded-2xl border border-white/10 bg-[#0b2740]/70 p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <h2 className="text-lg font-semibold">Quarterly Drill Plan</h2>
+              <div className="flex items-center gap-3">
+                {plan && (
+                  <span className="text-xs px-2 py-1 rounded-lg border border-white/15 bg-white/5 text-slate-200">
+                    Plan year: {plan.year}
+                  </span>
+                )}
+                <span className="text-xs text-slate-300">Select a quarter to create report</span>
+              </div>
+            </div>
+            {planLoading && <p className="text-sm text-slate-200">Loading plan…</p>}
+            {planError && (
+              <div className="text-sm text-red-300 bg-red-950/40 border border-red-500/40 rounded-lg px-4 py-3">
+                {planError}
+              </div>
+            )}
+            {plan && plan.year !== year && (
+              <div className="text-sm text-amber-200 bg-amber-950/40 border border-amber-500/40 rounded-lg px-4 py-2">
+                Plan year ({plan.year}) differs from selected year ({year}). Switch the selector to match.
+              </div>
+            )}
+            {plan && (
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                {QUARTERS.map((q) => {
+                  const item = plan.planItems.find((p) => p.quarter === q);
+                  return (
+                    <div
+                      key={q}
+                      className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold">{q}</span>
+                        <span className="text-xs text-slate-300">
+                          {item ? toDateInputValue(item.plannedDate) : "—"}
+                        </span>
+                      </div>
+                      <p className="text-sm text-white/90">
+                        {item?.topic || "No plan"}
+                      </p>
+                      <p className="text-xs text-slate-300">
+                        {item?.instructor || ""}
+                      </p>
+                      <button
+                        type="button"
+                        disabled={!item}
+                        onClick={() => item && applyPlanItem(item)}
+                        className="w-full text-xs font-semibold px-3 py-2 rounded-lg border border-orange-400/60 text-orange-200 hover:bg-orange-500/10 disabled:opacity-50"
+                      >
+                        {item ? "Create report" : "Not planned"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {creatingFor && (
           <form
             onSubmit={handleSubmit}
             className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur shadow-2xl space-y-6"
@@ -196,9 +348,18 @@ export default function DrillsReportPage({ hideSidebar = false }) {
             <div className="rounded-2xl border border-white/10 bg-[#0b2740]/80 p-6 space-y-6">
               {/* General Details Section */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 border-b border-white/10 pb-3">
-                  <span className="text-lg">➕</span>
-                  <h2 className="text-lg font-semibold">General details</h2>
+                <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">➕</span>
+                    <h2 className="text-lg font-semibold">Drill report details</h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCreatingFor(null)}
+                    className="text-xs text-slate-200 hover:text-white"
+                  >
+                    ✕ Close
+                  </button>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
@@ -358,6 +519,7 @@ export default function DrillsReportPage({ hideSidebar = false }) {
               </button>
             </div>
           </form>
+          )}
         </div>
       </div>
   );

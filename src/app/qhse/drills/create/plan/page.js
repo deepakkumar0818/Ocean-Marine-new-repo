@@ -21,10 +21,15 @@ function getYears() {
 
 const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
 
+// Normalize to yyyy-mm-dd without timezone shifting
+function toDateInput(year, monthIndex, day = 1) {
+  return new Date(Date.UTC(year, monthIndex, day)).toISOString().slice(0, 10);
+}
+
 // Get quarter start date based on year and quarter index
 function getQuarterStartDate(year, quarterIndex) {
   const month = quarterIndex * 3; // Q1=0, Q2=3, Q3=6, Q4=9
-  return new Date(year, month, 1).toISOString().slice(0, 10);
+  return toDateInput(year, month, 1);
 }
 
 export default function DrillsPlanPage({ hideSidebar = false }) {
@@ -44,8 +49,10 @@ export default function DrillsPlanPage({ hideSidebar = false }) {
     }));
   });
   const [saving, setSaving] = useState(false);
+  const [approving, setApproving] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
+  const [savedPlan, setSavedPlan] = useState(null);
 
   const handleYearChange = (newYear) => {
     setYear(newYear);
@@ -116,6 +123,7 @@ export default function DrillsPlanPage({ hideSidebar = false }) {
 
       setMessage(`✅ Drill plan for ${year} saved successfully!`);
       setError(null);
+      setSavedPlan(data.data);
       
       // Scroll to top to show success message
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -124,6 +132,33 @@ export default function DrillsPlanPage({ hideSidebar = false }) {
       setMessage(null);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!savedPlan?._id) {
+      setError("Save the plan first, then approve.");
+      return;
+    }
+    setApproving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/qhse/drill/plan/${savedPlan._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ year }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to approve drill plan");
+      }
+      setSavedPlan(data.data);
+      setMessage("✅ Drill plan approved.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setApproving(false);
     }
   };
 
@@ -180,22 +215,23 @@ export default function DrillsPlanPage({ hideSidebar = false }) {
                 Select Quarter
               </p>
               <div className="flex items-center gap-1 border border-sky-400/30 rounded-xl bg-white/5 p-1 overflow-x-auto">
-                {QUARTERS.map((quarter, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => setSelectedQuarter(index)}
-                    className={`flex-1 min-w-[80px] px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-150 ${
-                      selectedQuarter === index
-                        ? "bg-orange-500 text-white shadow-lg shadow-orange-500/40"
-                        : index === 3
-                        ? "bg-orange-500/20 text-orange-300 border border-orange-400/50"
-                        : "text-sky-200 hover:bg-white/10 border border-transparent"
-                    } ${hasData && selectedQuarter === index ? "ring-2 ring-emerald-400/50" : ""}`}
-                  >
-                    {quarter}
-                  </button>
-                ))}
+                {QUARTERS.map((quarter, index) => {
+                  const isSelected = selectedQuarter === index;
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setSelectedQuarter(index)}
+                      className={`flex-1 min-w-[80px] px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-150 ${
+                        isSelected
+                          ? "bg-orange-500 text-white shadow-lg shadow-orange-500/40"
+                          : "text-sky-200 hover:bg-white/10 border border-transparent"
+                      } ${hasData && isSelected ? "ring-2 ring-emerald-400/50" : ""}`}
+                    >
+                      {quarter}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -314,6 +350,17 @@ export default function DrillsPlanPage({ hideSidebar = false }) {
 
             {/* Submit Button */}
             <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+              {savedPlan && (
+                <button
+                  type="button"
+                  onClick={handleApprove}
+                  disabled={approving}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 text-sm font-semibold uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/40 hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <span>✔</span>
+                  <span>{approving ? "Approving..." : "Approve Plan"}</span>
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={saving}

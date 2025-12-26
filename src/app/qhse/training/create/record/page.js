@@ -39,9 +39,11 @@ function monthFromDateString(dateStr) {
 }
 
 export default function TrainingRecordPage({ hideSidebar = false }) {
-  const [availableYears, setAvailableYears] = useState([]);
-  const [loadingYears, setLoadingYears] = useState(true);
-  const [year, setYear] = useState(null);
+  const initialYears = getYears();
+  const currentYear = new Date().getFullYear();
+  const [availableYears, setAvailableYears] = useState(initialYears);
+  const [loadingYears, setLoadingYears] = useState(false);
+  const [year, setYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [plan, setPlan] = useState(null);
@@ -62,9 +64,12 @@ export default function TrainingRecordPage({ hideSidebar = false }) {
         const res = await fetch("/api/qhse/training/plan");
         const data = await res.json();
         if (res.ok && data.success && Array.isArray(data.data)) {
-          setAvailableYears(data.data);
-          if (data.data.length > 0 && !year) {
-            setYear(data.data[0]); // Set to latest year
+          const merged = Array.from(new Set([...initialYears, ...data.data])).sort(
+            (a, b) => b - a
+          );
+          setAvailableYears(merged);
+          if (!merged.includes(year)) {
+            setYear(merged[0]);
           }
         }
       } catch (err) {
