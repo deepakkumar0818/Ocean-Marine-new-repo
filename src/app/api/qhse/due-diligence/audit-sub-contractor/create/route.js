@@ -7,7 +7,8 @@ export async function POST(req) {
   try {
     const body = await req.json();
     const {
-      subcontractorNameAndAddress,
+      subcontractorName,
+      subcontractorAddress,
       serviceType,
       contactPerson,
       emailOfContactPerson,
@@ -24,7 +25,8 @@ export async function POST(req) {
     } = body;
 
     if (
-      !subcontractorNameAndAddress?.trim() ||
+      !subcontractorName?.trim() ||
+      !subcontractorAddress?.trim() ||
       !serviceType?.trim() ||
       !contactPerson?.trim() ||
       !emailOfContactPerson?.trim() ||
@@ -85,7 +87,8 @@ export async function POST(req) {
     }
 
     const newSubContractorAudit = await new SubContractorAudit({
-      subcontractorNameAndAddress,
+      subcontractorName,
+      subcontractorAddress,
       serviceType,
       contactPerson,
       emailOfContactPerson,

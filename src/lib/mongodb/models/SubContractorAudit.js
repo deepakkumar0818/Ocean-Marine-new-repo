@@ -24,7 +24,13 @@ const SubContractorAuditSchema = new mongoose.Schema(
     },
 
     /* -------- SUB-CONTRACTOR DETAILS -------- */
-    subcontractorNameAndAddress: {
+    subcontractorName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    subcontractorAddress: {
       type: String,
       required: true,
       trim: true,
@@ -104,7 +110,7 @@ const SubContractorAuditSchema = new mongoose.Schema(
     /* -------- STATUS -------- */
     status: {
       type: String,
-      enum: ["Draft", "Approved"],
+      enum: ["Draft", "Submitted", "Approved"],
       default: "Draft",
       index: true,
     },

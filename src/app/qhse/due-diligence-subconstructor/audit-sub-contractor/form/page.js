@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import QhseSidebar from "../../../components/QhseSidebar";
 
 const ISO_CERTIFICATIONS = [
@@ -13,8 +14,10 @@ const ISO_CERTIFICATIONS = [
 ];
 
 export default function AuditSubContractorFormPage() {
+  const searchParams = useSearchParams();
   const [form, setForm] = useState({
-    subcontractorNameAndAddress: "",
+    subcontractorName: "",
+    subcontractorAddress: "",
     serviceType: "",
     contactPerson: "",
     emailOfContactPerson: "",
@@ -39,8 +42,10 @@ export default function AuditSubContractorFormPage() {
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [editId, setEditId] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -70,16 +75,67 @@ export default function AuditSubContractorFormPage() {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    const editParam = searchParams?.get("edit");
+    if (editParam) {
+      setEditId(editParam);
+      fetchFormData(editParam);
+    }
+  }, [searchParams]);
+
+  const fetchFormData = async (id) => {
+    try {
+      const res = await fetch(`/api/qhse/due-diligence/audit-sub-contractor/list`);
+      const data = await res.json();
+      if (res.ok && data.subContractorAudits) {
+        const audit = data.subContractorAudits.find((a) => a._id === id);
+        if (audit && audit.status === "Draft") {
+          setForm({
+            subcontractorName: audit.subcontractorName || "",
+            subcontractorAddress: audit.subcontractorAddress || "",
+            serviceType: audit.serviceType || "",
+            contactPerson: audit.contactPerson || "",
+            emailOfContactPerson: audit.emailOfContactPerson || "",
+            phoneOfContactPerson: audit.phoneOfContactPerson || "",
+            operatingAreas: audit.operatingAreas || "",
+            tradeLicenseCopyAvailable: audit.tradeLicenseCopyAvailable || false,
+            hasHSEPolicy: audit.hasHSEPolicy || false,
+            auditsSubcontractors: audit.auditsSubcontractors || false,
+            hasInsurance: audit.hasInsurance || false,
+            insuranceDetails: audit.insuranceDetails || "",
+            isoCertifications: audit.isoCertifications || [],
+            auditCompletedBy: {
+              name: audit.auditCompletedBy?.name || "",
+              designation: audit.auditCompletedBy?.designation || "",
+              signedAt: audit.auditCompletedBy?.signedAt
+                ? new Date(audit.auditCompletedBy.signedAt).toISOString().split("T")[0]
+                : "",
+            },
+            contractorApprovedBy: {
+              name: audit.contractorApprovedBy?.name || "",
+              designation: audit.contractorApprovedBy?.designation || "",
+              signedAt: audit.contractorApprovedBy?.signedAt
+                ? new Date(audit.contractorApprovedBy.signedAt).toISOString().split("T")[0]
+                : "",
+            },
+          });
+        }
+      }
+    } catch (err) {
+      setError("Failed to load form data");
+    }
+  };
+
+  const handleSaveDraft = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
+    setSaving(true);
     setError("");
     setSuccess("");
 
     try {
-      // Format dates and ensure boolean fields are properly set
       const payload = {
-        subcontractorNameAndAddress: form.subcontractorNameAndAddress.trim(),
+        subcontractorName: form.subcontractorName.trim(),
+        subcontractorAddress: form.subcontractorAddress.trim(),
         serviceType: form.serviceType.trim(),
         contactPerson: form.contactPerson.trim(),
         emailOfContactPerson: form.emailOfContactPerson.trim(),
@@ -89,7 +145,9 @@ export default function AuditSubContractorFormPage() {
         hasHSEPolicy: form.hasHSEPolicy === true,
         auditsSubcontractors: form.auditsSubcontractors === true,
         hasInsurance: form.hasInsurance === true,
-        insuranceDetails: form.hasInsurance ? (form.insuranceDetails?.trim() || "") : "",
+        insuranceDetails: form.hasInsurance
+          ? form.insuranceDetails?.trim() || ""
+          : "",
         isoCertifications: form.isoCertifications || [],
         auditCompletedBy: {
           name: form.auditCompletedBy.name?.trim() || "",
@@ -108,30 +166,237 @@ export default function AuditSubContractorFormPage() {
         status: "Draft",
       };
 
-      const res = await fetch(
-        "/api/qhse/due-diligence/audit-sub-contractor/create",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      let res;
+      if (editId) {
+        res = await fetch(
+          `/api/qhse/due-diligence/audit-sub-contractor/${editId}/update`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+      } else {
+        res = await fetch(
+          "/api/qhse/due-diligence/audit-sub-contractor/create",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+      }
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to create audit form");
+        throw new Error(data.error || "Failed to save draft");
+      }
+
+      setSuccess("✅ Form saved as draft successfully!");
+      setError("");
+      
+      if (!editId && data.data?._id) {
+        setEditId(data.data._id);
+        window.history.replaceState({}, '', `/qhse/due-diligence-subconstructor/audit-sub-contractor/form?edit=${data.data._id}`);
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      setError(err.message || "Something went wrong. Please try again.");
+      setSuccess("");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      // Validation
+      if (!form.subcontractorName?.trim()) {
+        setError("Sub-contractor name is required");
+        setSubmitting(false);
+        return;
+      }
+      if (!form.subcontractorAddress?.trim()) {
+        setError("Sub-contractor address is required");
+        setSubmitting(false);
+        return;
+      }
+      if (!form.serviceType?.trim()) {
+        setError("Service type is required");
+        setSubmitting(false);
+        return;
+      }
+      if (!form.contactPerson?.trim()) {
+        setError("Contact person is required");
+        setSubmitting(false);
+        return;
+      }
+      if (!form.emailOfContactPerson?.trim()) {
+        setError("Email is required");
+        setSubmitting(false);
+        return;
+      }
+      if (!form.phoneOfContactPerson?.trim()) {
+        setError("Phone number is required");
+        setSubmitting(false);
+        return;
+      }
+      if (typeof form.tradeLicenseCopyAvailable !== "boolean") {
+        setError("Please answer the trade license question");
+        setSubmitting(false);
+        return;
+      }
+      if (typeof form.hasHSEPolicy !== "boolean") {
+        setError("Please answer the HSE Policy question");
+        setSubmitting(false);
+        return;
+      }
+      if (typeof form.auditsSubcontractors !== "boolean") {
+        setError("Please answer the audit question");
+        setSubmitting(false);
+        return;
+      }
+      if (typeof form.hasInsurance !== "boolean") {
+        setError("Please answer the insurance question");
+        setSubmitting(false);
+        return;
+      }
+      if (form.hasInsurance && !form.insuranceDetails?.trim()) {
+        setError("Insurance details are required when insurance is selected");
+        setSubmitting(false);
+        return;
+      }
+      if (!Array.isArray(form.isoCertifications) || form.isoCertifications.length === 0) {
+        setError("At least one ISO certification must be selected");
+        setSubmitting(false);
+        return;
+      }
+      if (!form.auditCompletedBy?.name?.trim()) {
+        setError("Audit completed by name is required");
+        setSubmitting(false);
+        return;
+      }
+      if (!form.auditCompletedBy?.designation?.trim()) {
+        setError("Audit completed by designation is required");
+        setSubmitting(false);
+        return;
+      }
+      if (!form.auditCompletedBy?.signedAt) {
+        setError("Audit completed by signed date is required");
+        setSubmitting(false);
+        return;
+      }
+      if (!form.contractorApprovedBy?.name?.trim()) {
+        setError("Contractor approved by name is required");
+        setSubmitting(false);
+        return;
+      }
+      if (!form.contractorApprovedBy?.designation?.trim()) {
+        setError("Contractor approved by designation is required");
+        setSubmitting(false);
+        return;
+      }
+      if (!form.contractorApprovedBy?.signedAt) {
+        setError("Contractor approved by signed date is required");
+        setSubmitting(false);
+        return;
+      }
+
+      // Format dates and ensure boolean fields are properly set
+      const payload = {
+        subcontractorName: form.subcontractorName.trim(),
+        subcontractorAddress: form.subcontractorAddress.trim(),
+        serviceType: form.serviceType.trim(),
+        contactPerson: form.contactPerson.trim(),
+        emailOfContactPerson: form.emailOfContactPerson.trim(),
+        phoneOfContactPerson: form.phoneOfContactPerson.trim(),
+        operatingAreas: form.operatingAreas?.trim() || "",
+        tradeLicenseCopyAvailable: form.tradeLicenseCopyAvailable === true,
+        hasHSEPolicy: form.hasHSEPolicy === true,
+        auditsSubcontractors: form.auditsSubcontractors === true,
+        hasInsurance: form.hasInsurance === true,
+        insuranceDetails: form.hasInsurance
+          ? form.insuranceDetails?.trim() || ""
+          : "",
+        isoCertifications: form.isoCertifications || [],
+        auditCompletedBy: {
+          name: form.auditCompletedBy.name?.trim() || "",
+          designation: form.auditCompletedBy.designation?.trim() || "",
+          signedAt: form.auditCompletedBy.signedAt
+            ? new Date(form.auditCompletedBy.signedAt)
+            : undefined,
+        },
+        contractorApprovedBy: {
+          name: form.contractorApprovedBy.name?.trim() || "",
+          designation: form.contractorApprovedBy.designation?.trim() || "",
+          signedAt: form.contractorApprovedBy.signedAt
+            ? new Date(form.contractorApprovedBy.signedAt)
+            : undefined,
+        },
+        status: "Draft",
+      };
+
+      let formId = editId;
+
+      // First save/create the form
+      if (editId) {
+        const updateRes = await fetch(
+          `/api/qhse/due-diligence/audit-sub-contractor/${editId}/update`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+        const updateData = await updateRes.json();
+        if (!updateRes.ok) {
+          throw new Error(updateData.error || "Failed to update form");
+        }
+      } else {
+        const createRes = await fetch(
+          "/api/qhse/due-diligence/audit-sub-contractor/create",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+        const createData = await createRes.json();
+        if (!createRes.ok) {
+          throw new Error(createData.error || "Failed to create form");
+        }
+        formId = createData.data._id;
+      }
+
+      // Then submit it
+      const submitRes = await fetch(
+        `/api/qhse/due-diligence/audit-sub-contractor/${formId}/submit`,
+        {
+          method: "PUT",
+        }
+      );
+
+      const submitData = await submitRes.json();
+
+      if (!submitRes.ok) {
+        throw new Error(submitData.error || "Failed to submit form");
       }
 
       // Show prominent success message
-      setSuccess("✅ Audit form created successfully! Redirecting to list...");
+      setSuccess("✅ Audit form submitted successfully! Redirecting to list...");
       setError("");
-      
+
       // Reset form
       setForm({
-        subcontractorNameAndAddress: "",
+        subcontractorName: "",
+        subcontractorAddress: "",
         serviceType: "",
         contactPerson: "",
         emailOfContactPerson: "",
@@ -155,12 +420,17 @@ export default function AuditSubContractorFormPage() {
         },
       });
 
+      if (editId) {
+        window.history.replaceState({}, '', '/qhse/due-diligence-subconstructor/audit-sub-contractor/form');
+      }
+
       // Scroll to top to show success message
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
 
       // Redirect to list page after 2 seconds
       setTimeout(() => {
-        window.location.href = "/qhse/due-diligence-subconstructor/audit-sub-contractor/list";
+        window.location.href =
+          "/qhse/due-diligence-subconstructor/audit-sub-contractor/list-user";
       }, 2000);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
@@ -190,17 +460,18 @@ export default function AuditSubContractorFormPage() {
                 </p>
                 <h1 className="text-2xl font-bold">
                   Audit Form - Sub Contractor
+                  {editId && <span className="text-sm text-slate-400 ml-2">(Editing)</span>}
                 </h1>
                 <p className="text-xs text-slate-200 mt-1">
-                  Create a new sub-contractor audit form
+                  {editId ? "Edit your draft form. You can save changes or submit it." : "Create a new sub-contractor audit form"}
                 </p>
               </div>
             </div>
             <Link
-              href="/qhse/due-diligence-subconstructor/audit-sub-contractor/list"
+              href="/qhse/due-diligence-subconstructor/audit-sub-contractor/list-user"
               className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white/90 hover:bg-white/10 transition"
             >
-              View List
+              My Forms
             </Link>
           </header>
 
@@ -231,20 +502,33 @@ export default function AuditSubContractorFormPage() {
 
                 <div className="space-y-1">
                   <label className="text-xs uppercase tracking-wider text-slate-400 block">
-                    Name of Sub-Contractor & Address{" "}
+                    Name of Sub-Contractor{" "}
+                    <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="subcontractorName"
+                    value={form.subcontractorName}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    placeholder="Enter sub-contractor name"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs uppercase tracking-wider text-slate-400 block">
+                    Address of Sub-Contractor{" "}
                     <span className="text-red-400">*</span>
                   </label>
                   <textarea
-                    name="subcontractorNameAndAddress"
-                    value={form.subcontractorNameAndAddress}
+                    name="subcontractorAddress"
+                    value={form.subcontractorAddress}
                     onChange={handleChange}
                     required
-                    rows={3}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y"
-                    placeholder="Enter sub-contractor name and address"
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y min-h-[100px]"
+                    placeholder="Enter sub-contractor address"
                   />
                 </div>
-
                 <div className="space-y-1">
                   <label className="text-xs uppercase tracking-wider text-slate-400 block">
                     Type of service offered:{" "}
@@ -278,29 +562,33 @@ export default function AuditSubContractorFormPage() {
 
                 <div className="space-y-1">
                   <label className="text-xs uppercase tracking-wider text-slate-400 block">
-                    Contact Number & Email ID{" "}
+                    Contact Number{" "}
                     <span className="text-red-400">*</span>
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                      type="tel"
-                      name="phoneOfContactPerson"
-                      value={form.phoneOfContactPerson}
-                      onChange={handleChange}
-                      required
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                      placeholder="Contact Number"
-                    />
-                    <input
-                      type="email"
-                      name="emailOfContactPerson"
-                      value={form.emailOfContactPerson}
-                      onChange={handleChange}
-                      required
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                      placeholder="Email ID"
-                    />
-                  </div>
+                  <input
+                    type="tel"
+                    name="phoneOfContactPerson"
+                    value={form.phoneOfContactPerson}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    placeholder="Enter contact number"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs uppercase tracking-wider text-slate-400 block">
+                    Email ID{" "}
+                    <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="emailOfContactPerson"
+                    value={form.emailOfContactPerson}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    placeholder="Enter email ID"
+                  />
                 </div>
 
                 <div className="space-y-1">
@@ -645,12 +933,17 @@ export default function AuditSubContractorFormPage() {
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                <div className="text-xs text-slate-400">
-                  Status: <span className="text-amber-300">Draft</span>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveDraft}
+                  disabled={saving || submitting}
+                  className="px-6 py-2.5 rounded-lg bg-slate-600 hover:bg-slate-700 text-white text-sm font-semibold uppercase tracking-wider transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {saving ? "Saving..." : "Save as Draft"}
+                </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || saving}
                   className="px-6 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold uppercase tracking-wider transition disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-orange-500/30"
                 >
                   {submitting ? "Submitting..." : "Submit Form"}
@@ -663,4 +956,3 @@ export default function AuditSubContractorFormPage() {
     </div>
   );
 }
-
