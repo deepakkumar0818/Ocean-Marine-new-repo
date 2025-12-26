@@ -124,7 +124,6 @@ const sidebarTabs = [
 
 export default function QhseSidebar() {
   const [activeTab, setActiveTab] = useState("training");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [expandedNestedSubmodules, setExpandedNestedSubmodules] = useState(new Set());
   const sidebarRef = useRef(null);
   const pathname = usePathname();
@@ -151,22 +150,6 @@ export default function QhseSidebar() {
       setActiveTab("drills");
     }
   }, [pathname]);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
-        setIsSidebarOpen(false);
-      }
-    };
-
-    if (isSidebarOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isSidebarOpen]);
 
   const handleModuleClick = (tab) => {
     // If we're on the main QHSE page, use query params to show form inline
@@ -224,27 +207,13 @@ export default function QhseSidebar() {
       {/* Left Sidebar */}
       <div
         ref={sidebarRef}
-        className={`fixed left-0 top-0 h-full bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 border-r border-white/20 shadow-2xl backdrop-blur-md z-50 transition-transform duration-300 ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className="fixed left-0 top-0 h-full bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 border-r border-white/20 shadow-2xl backdrop-blur-md z-50"
         style={{ width: "300px" }}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-white/10 bg-gradient-to-r from-orange-500/10 to-transparent">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-500/30">
-                <span className="text-white text-xl">⚡</span>
-              </div>
-              <h2 className="text-lg font-bold text-white">QHSE Modules</h2>
-            </div>
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 transition hover:scale-110"
-              aria-label="Close sidebar"
-            >
-              <span className="text-white text-lg">×</span>
-            </button>
+            <h2 className="text-lg font-bold text-white">QHSE Modules</h2>
           </div>
 
           {/* Navigation Items */}
@@ -280,11 +249,6 @@ export default function QhseSidebar() {
                           : "text-white/90 hover:bg-white/10 hover:text-white border border-white/5 hover:border-white/10 hover:scale-[1.01]"
                       }`}
                     >
-                      {tab.icon && (
-                        <span className="text-lg transition-transform group-hover:scale-110">
-                          {tab.icon}
-                        </span>
-                      )}
                       <span className="flex-1">{tab.label}</span>
                       {tab.submodules && (
                         <span
@@ -416,16 +380,6 @@ export default function QhseSidebar() {
         </div>
       </div>
 
-      {/* Sidebar Toggle Button */}
-      {!isSidebarOpen && (
-        <button
-          onClick={() => setIsSidebarOpen(true)}
-          className="fixed left-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition border border-orange-400/30 shadow-lg shadow-orange-500/30 hover:scale-110"
-          aria-label="Open sidebar"
-        >
-          <span className="text-white text-xl">☰</span>
-        </button>
-      )}
     </>
   );
 }
