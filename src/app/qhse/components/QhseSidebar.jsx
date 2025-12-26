@@ -85,12 +85,22 @@ const sidebarTabs = [
           {
             key: "questionnaire-form",
             label: "Form",
-            href: "/qhse/due-diligence-subconstructor/due-diligence-questionnaire/form",
+            href: "/qhse/due-diligence-subconstructor/due-diligence-questionnaire/questionnaire-form",
           },
           {
-            key: "questionnaire-list",
-            label: "List",
-            href: "/qhse/due-diligence-subconstructor/due-diligence-questionnaire/list",
+            key: "questionnaire-list-user",
+            label: "My Forms",
+            href: "/qhse/due-diligence-subconstructor/due-diligence-questionnaire/questionnaire-list-user",
+          },
+          {
+            key: "questionnaire-list-admin",
+            label: "Admin Review",
+            href: "/qhse/due-diligence-subconstructor/due-diligence-questionnaire/questionnaire-list-admin",
+          },
+          {
+            key: "questionnaire-list-admin-history",
+            label: "Approved History",
+            href: "/qhse/due-diligence-subconstructor/due-diligence-questionnaire/questionnaire-list-admin-history",
           },
         ],
       },

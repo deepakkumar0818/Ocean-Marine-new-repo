@@ -41,15 +41,22 @@ export default function DefectCreatePage() {
         throw new Error(data.error || "Failed to create equipment defect");
       }
 
-      setMessage("Equipment defect created successfully with status OPEN.");
+      setMessage("✅ Equipment defect created successfully with status OPEN!");
+      setError(null);
+      
+      // Reset form
       setForm({
         equipmentDefect: "",
         base: "",
         actionRequired: "",
         targetDate: "",
       });
+
+      // Scroll to top to show success message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setError(err.message || "Something went wrong");
+      setMessage(null);
     } finally {
       setSubmitting(false);
     }
@@ -224,14 +231,16 @@ export default function DefectCreatePage() {
 
                 {/* Messages */}
                 {error && (
-                  <p className="text-xs text-red-300 bg-red-950/40 border border-red-500/40 rounded-lg px-3 py-2">
-                    {error}
-                  </p>
+                  <div className="text-sm text-red-300 bg-red-950/40 border border-red-500/40 rounded-lg px-4 py-3 flex items-center gap-2">
+                    <span className="text-lg">⚠️</span>
+                    <span>{error}</span>
+                  </div>
                 )}
                 {message && (
-                  <p className="text-xs text-emerald-200 bg-emerald-950/40 border border-emerald-500/40 rounded-lg px-3 py-2">
-                    {message}
-                  </p>
+                  <div className="text-base text-emerald-300 bg-emerald-950/40 border-2 border-emerald-500/60 rounded-lg px-6 py-4 flex items-center gap-3 shadow-lg shadow-emerald-500/20">
+                    <span className="text-2xl">✅</span>
+                    <span className="font-semibold">{message}</span>
+                  </div>
                 )}
 
                 {/* Buttons */}

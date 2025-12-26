@@ -125,7 +125,10 @@ export default function AuditSubContractorFormPage() {
         throw new Error(data.error || "Failed to create audit form");
       }
 
-      setSuccess("Audit form created successfully!");
+      // Show prominent success message
+      setSuccess("✅ Audit form created successfully! Redirecting to list...");
+      setError("");
+      
       // Reset form
       setForm({
         subcontractorNameAndAddress: "",
@@ -151,8 +154,17 @@ export default function AuditSubContractorFormPage() {
           signedAt: "",
         },
       });
+
+      // Scroll to top to show success message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Redirect to list page after 2 seconds
+      setTimeout(() => {
+        window.location.href = "/qhse/due-diligence-subconstructor/audit-sub-contractor/list";
+      }, 2000);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
+      setSuccess("");
     } finally {
       setSubmitting(false);
     }
@@ -198,14 +210,16 @@ export default function AuditSubContractorFormPage() {
               className="rounded-2xl border border-white/20 bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md shadow-2xl p-6 space-y-6"
             >
               {error && (
-                <div className="text-xs text-red-300 bg-red-950/40 border border-red-500/40 rounded-lg px-3 py-2">
-                  {error}
+                <div className="text-sm text-red-300 bg-red-950/40 border border-red-500/40 rounded-lg px-4 py-3 flex items-center gap-2">
+                  <span className="text-lg">⚠️</span>
+                  <span>{error}</span>
                 </div>
               )}
 
               {success && (
-                <div className="text-xs text-emerald-300 bg-emerald-950/40 border border-emerald-500/40 rounded-lg px-3 py-2">
-                  {success}
+                <div className="text-base text-emerald-300 bg-emerald-950/40 border-2 border-emerald-500/60 rounded-lg px-6 py-4 flex items-center gap-3 shadow-lg shadow-emerald-500/20">
+                  <span className="text-2xl">✅</span>
+                  <span className="font-semibold">{success}</span>
                 </div>
               )}
 
