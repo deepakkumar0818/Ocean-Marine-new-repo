@@ -114,9 +114,14 @@ export default function DrillsPlanPage({ hideSidebar = false }) {
         throw new Error(data.error || "Failed to create drill plan");
       }
 
-      setMessage(`Drill plan for ${year} saved as Draft. You can approve it later.`);
+      setMessage(`✅ Drill plan for ${year} saved successfully!`);
+      setError(null);
+      
+      // Scroll to top to show success message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setError(err.message);
+      setMessage(null);
     } finally {
       setSaving(false);
     }
@@ -295,13 +300,15 @@ export default function DrillsPlanPage({ hideSidebar = false }) {
 
             {/* Messages */}
             {error && (
-              <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3">
-                {error}
+              <div className="text-sm text-red-300 bg-red-950/40 border border-red-500/40 rounded-lg px-4 py-3 flex items-center gap-2">
+                <span className="text-lg">⚠️</span>
+                <span>{error}</span>
               </div>
             )}
             {message && (
-              <div className="text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/40 rounded-xl px-4 py-3">
-                {message}
+              <div className="text-base text-emerald-300 bg-emerald-950/40 border-2 border-emerald-500/60 rounded-lg px-6 py-4 flex items-center gap-3 shadow-lg shadow-emerald-500/20">
+                <span className="text-2xl">✅</span>
+                <span className="font-semibold">{message}</span>
               </div>
             )}
 
