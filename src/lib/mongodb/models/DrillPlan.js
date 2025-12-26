@@ -1,5 +1,11 @@
 import mongoose from "mongoose";
 
+const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
+const getQuarterFromDate = (date) => {
+  const d = new Date(date);
+  const m = d.getMonth(); // 0-11
+  return QUARTERS[Math.floor(m / 3)];
+};
 /* ----------------------------------------
    COUNTER SCHEMA (SAME FILE)
 ----------------------------------------- */
@@ -16,25 +22,14 @@ const Counter =
 ----------------------------------------- */
 const QuarterlyDrillSchema = new mongoose.Schema(
   {
-    plannedDate: {
-      type: Date,
-      required: true,
-    },
-
-    topic: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
-    status: {
-      type: String,
-      enum: ["Draft", "Approved"],
-      default: "Draft",
-      index: true,
-    },
+    plannedDate: { type: Date, required: true },
+    quarter: { type: String, enum: QUARTERS, index: true },
+    topic: { type: String, required: true, trim: true },
+    instructor: { type: String, trim: true },
+    description: { type: String, trim: true },
+    status: { type: String, enum: ["Draft", "Approved"], default: "Draft", index: true },
   },
-  { _id: false }
+  { _id: true } // keep subdoc ids so we can reference a specific plan item
 );
 
 /* ----------------------------------------
@@ -84,6 +79,16 @@ DrillPlanSchema.pre("save", async function () {
     );
 
     this.formCode = `QAF-OFD-${String(counter.seq).padStart(3, "0")}`;
+  }
+});
+
+DrillPlanSchema.pre("validate", function () {
+  if (Array.isArray(this.planItems)) {
+    this.planItems = this.planItems.map((item) => ({
+      ...item,
+      quarter: item.quarter || getQuarterFromDate(item.plannedDate),
+      status: item.status || "Draft",
+    }));
   }
 });
 

@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/config/connection";
 import DrillPlan from "@/lib/mongodb/models/DrillPlan";
 
+const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
+const getQuarterFromDate = (date) => {
+  const d = new Date(date);
+  const m = d.getMonth();
+  return QUARTERS[Math.floor(m / 3)];
+};
+
 export async function GET(req) {
   try {
     await connectDB();
@@ -74,17 +81,24 @@ export async function POST(req) {
     }
 
     // Ensure each planItem has status "Draft" (default in schema, but being explicit)
-    const planItemsWithStatus = planItems.map(item => ({
-      ...item,
-      status: item.status || "Draft",
-    }));
+    const normalizedPlanItems = planItems.map((item) => {
+      const plannedDate = new Date(item.plannedDate);
+      return {
+        plannedDate,
+        quarter: item.quarter || getQuarterFromDate(plannedDate),
+        topic: item.topic?.trim(),
+        instructor: item.instructor?.trim(),
+        description: item.description?.trim(),
+        status: item.status || "Draft",
+      };
+    });
 
     // Ensure model is properly initialized
     const DrillPlanModel = DrillPlan || (await import("@/lib/mongodb/models/DrillPlan")).default;
     
     const newPlan = await DrillPlanModel.create({
       year: Number.parseInt(year, 10),
-      planItems: planItemsWithStatus,
+      planItems: normalizedPlanItems,
     });
 
     return NextResponse.json(
