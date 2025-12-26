@@ -8,7 +8,6 @@ const sidebarTabs = [
   {
     key: "training",
     label: "Training",
-    icon: "📚",
     submodules: [
       {
         key: "training-plan",
@@ -25,17 +24,15 @@ const sidebarTabs = [
   {
     key: "drills",
     label: "Drills",
-    icon: "🚨",
     submodules: [
       { key: "drill-plan", label: "Drill Plan", href: "/qhse/drills/create/plan" },
       { key: "drill-report", label: "Drill Report", href: "/qhse/drills/create/report" },
     ],
   },
-  { key: "forms", label: "Forms & checklist", icon: "📋" },
+  { key: "forms", label: "Forms & checklist",},
   {
     key: "defects",
     label: "Defects list",
-    icon: "⚠️",
     submodules: [
       {
         key: "defects-create",
@@ -49,18 +46,16 @@ const sidebarTabs = [
       },
     ],
   },
-  { key: "best-practices", label: "Best practices", icon: "⭐" },
+  { key: "best-practices", label: "Best practices",},
   {
     key: "near-miss",
     label: "Near-miss reporting",
-    icon: "🔍",
     href: "/qhse/near-miss",
   },
-  { key: "moc", label: "MOC", icon: "📝" },
+  { key: "moc", label: "MOC"},
   {
     key: "due-diligence",
     label: "Due diligence / subcontractor audits",
-    icon: "✅",
     submodules: [
       {
         key: "audit-sub-contractor",
@@ -119,14 +114,12 @@ const sidebarTabs = [
   {
     key: "audits",
     label: "Audits & inspection planner",
-    icon: "🔎",
   },
   {
     key: "poac",
     label: "POAC cross competency",
-    icon: "🎯",
   },
-  { key: "kpi", label: "KPI", icon: "📊" },
+  { key: "kpi", label: "KPI", },
 ];
 
 export default function QhseSidebar() {
