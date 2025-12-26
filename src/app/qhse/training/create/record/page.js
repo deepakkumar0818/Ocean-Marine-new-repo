@@ -102,10 +102,19 @@ export default function TrainingRecordPage({ hideSidebar = false }) {
             data.error || "No approved training plan found for this year"
           );
         }
-
-        setPlan(data.data);
+        
+        // Handle case where plan is null (no approved plan for this year)
+        if (!data.data) {
+          setPlan(null);
+          setPlanError("No approved training plan found for this year. Please create and approve a training plan first.");
+        } else {
+          console.log(data.data);
+          setPlan(data.data);
+          setPlanError(null);
+        }
       } catch (err) {
         setPlanError(err.message);
+        setPlan(null);
       } finally {
         setLoadingPlan(false);
       }

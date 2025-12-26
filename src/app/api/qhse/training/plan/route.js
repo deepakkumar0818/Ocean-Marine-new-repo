@@ -15,14 +15,12 @@ export async function GET(req) {
         "planItems.status": "Approved",
       }).sort({ createdAt: -1 });
 
-      if (!plan) {
-        return NextResponse.json(
-          { success: false, error: "No approved training plan found for this year" },
-          { status: 404 }
-        );
-      }
-
-      return NextResponse.json({ success: true, data: plan });
+      // Return null if no plan found (instead of 404) so frontend can handle it gracefully
+      return NextResponse.json({ 
+        success: true, 
+        data: plan || null,
+        message: plan ? "Plan found" : "No approved training plan found for this year"
+      });
     } else {
       // Get all available years (years that have at least one approved planItem)
       const plans = await TrainingPlan.find({
@@ -70,7 +68,7 @@ export async function POST(req) {
     // Ensure each planItem has status "Draft" (default in schema, but being explicit)
     const planItemsWithStatus = planItems.map(item => ({
       ...item,
-      status: item.status || "Draft", // Each month gets its own status
+      status: item.status || "Approved", // Each month gets its own status
     }));
 
     const newPlan = await TrainingPlan.create({

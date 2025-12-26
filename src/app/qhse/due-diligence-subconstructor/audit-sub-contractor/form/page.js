@@ -77,19 +77,23 @@ export default function AuditSubContractorFormPage() {
 
   useEffect(() => {
     const editParam = searchParams?.get("edit");
-    if (editParam) {
+    if (editParam && editParam !== editId) {
       setEditId(editParam);
       fetchFormData(editParam);
+    } else if (!editParam && editId) {
+      // Clear editId if edit param is removed from URL
+      setEditId(null);
     }
   }, [searchParams]);
 
   const fetchFormData = async (id) => {
+    if (!id) return; // Don't fetch if no ID
     try {
       const res = await fetch(`/api/qhse/due-diligence/audit-sub-contractor/list`);
       const data = await res.json();
       if (res.ok && data.subContractorAudits) {
         const audit = data.subContractorAudits.find((a) => a._id === id);
-        if (audit && audit.status === "Draft") {
+        if (audit && audit.status === "Draft" && editId === id) {
           setForm({
             subcontractorName: audit.subcontractorName || "",
             subcontractorAddress: audit.subcontractorAddress || "",
@@ -393,6 +397,9 @@ export default function AuditSubContractorFormPage() {
       setSuccess("✅ Audit form submitted successfully! Redirecting to list...");
       setError("");
 
+      // Clear editId first to prevent useEffect from reloading data
+      setEditId(null);
+      
       // Reset form
       setForm({
         subcontractorName: "",
@@ -420,9 +427,8 @@ export default function AuditSubContractorFormPage() {
         },
       });
 
-      if (editId) {
-        window.history.replaceState({}, '', '/qhse/due-diligence-subconstructor/audit-sub-contractor/form');
-      }
+      // Clear URL params
+      window.history.replaceState({}, '', '/qhse/due-diligence-subconstructor/audit-sub-contractor/form');
 
       // Scroll to top to show success message
       window.scrollTo({ top: 0, behavior: "smooth" });
