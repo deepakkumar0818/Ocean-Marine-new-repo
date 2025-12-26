@@ -92,8 +92,7 @@ const SupplierDueDiligenceSchema = new mongoose.Schema(
     },
 
     /* ---------- DECLARATIONS ---------- */
-    generalDeclaration: {
-      name: { type: String },
+    generalDeclaration: {      name: { type: String },
       positionHeld: { type: String },
       signedAt: { type: Date },
       signature: { type: String }, // base64 or file ref

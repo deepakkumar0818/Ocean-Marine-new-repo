@@ -72,9 +72,19 @@ const sidebarTabs = [
             href: "/qhse/due-diligence-subconstructor/audit-sub-contractor/form",
           },
           {
-            key: "audit-list",
-            label: "List",
-            href: "/qhse/due-diligence-subconstructor/audit-sub-contractor/list",
+            key: "audit-list-user",
+            label: "My Forms",
+            href: "/qhse/due-diligence-subconstructor/audit-sub-contractor/list-user",
+          },
+          {
+            key: "audit-list-admin",
+            label: "Admin Review",
+            href: "/qhse/due-diligence-subconstructor/audit-sub-contractor/list-admin",
+          },
+          {
+            key: "audit-list-approved",
+            label: "Approved History",
+            href: "/qhse/due-diligence-subconstructor/audit-sub-contractor/list-approved",
           },
         ],
       },
@@ -252,7 +262,7 @@ export default function QhseSidebar() {
                   {tab.href ? (
                     <Link
                       href={tab.href}
-                      className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${
                         activeTab === tab.key
                           ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/40 scale-[1.02]"
                           : "text-white/90 hover:bg-white/10 hover:text-white border border-white/5 hover:border-white/10 hover:scale-[1.01]"
@@ -271,7 +281,7 @@ export default function QhseSidebar() {
                   ) : (
                     <button
                       onClick={() => handleModuleClick(tab)}
-                      className={`group flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      className={`group flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${
                         activeTab === tab.key
                           ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/40 scale-[1.02]"
                           : "text-white/90 hover:bg-white/10 hover:text-white border border-white/5 hover:border-white/10 hover:scale-[1.01]"
@@ -285,7 +295,7 @@ export default function QhseSidebar() {
                       <span className="flex-1">{tab.label}</span>
                       {tab.submodules && (
                         <span
-                          className={`text-xs transition-transform ${
+                          className={`text-sm transition-transform ${
                             activeTab === tab.key ? "rotate-90" : ""
                           }`}
                         >
@@ -337,7 +347,7 @@ export default function QhseSidebar() {
                               <>
                                 <button
                                   onClick={(e) => handleNestedSubmoduleClick(sub.key, e)}
-                                  className={`w-full flex items-center justify-between px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-150 border mb-1 ${
+                                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 border mb-1 ${
                                     hasActiveNested
                                       ? "text-orange-300 bg-orange-500/10 border-orange-500/30"
                                       : "text-orange-300/80 bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/30"
@@ -345,7 +355,7 @@ export default function QhseSidebar() {
                                 >
                                   <span>{sub.label}</span>
                                   <span
-                                    className={`text-xs transition-transform ${
+                                    className={`text-sm transition-transform ${
                                       isExpanded ? "rotate-90" : ""
                                     }`}
                                   >
@@ -363,14 +373,14 @@ export default function QhseSidebar() {
                                         <Link
                                           key={nested.key}
                                           href={getSubmoduleLink(nested.href)}
-                                          className={`block w-full text-left px-4 py-2 rounded-lg text-[10px] font-medium transition-all duration-150 border ${
+                                          className={`block w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 border ${
                                             isActiveNested
                                               ? "bg-white/20 text-white border-orange-400/50 shadow-md"
                                               : "text-white/70 hover:bg-white/10 hover:text-white border-white/5 hover:border-white/10"
                                           }`}
                                         >
                                           <span className="flex items-center gap-2">
-                                            <span className="text-[8px]">▸</span>
+                                            <span className="text-xs">▸</span>
                                             {nested.label}
                                           </span>
                                         </Link>
@@ -382,14 +392,14 @@ export default function QhseSidebar() {
                             ) : (
                               <Link
                                 href={getSubmoduleLink(sub.href)}
-                                className={`block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 border ${
+                                className={`block w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 border ${
                                   isActiveSub
                                     ? "bg-white/20 text-white border-orange-400/50 shadow-md"
                                     : "text-white/80 hover:bg-white/10 hover:text-white border-white/5 hover:border-white/10"
                                 }`}
                               >
                                 <span className="flex items-center gap-2">
-                                  <span className="text-[10px]">▸</span>
+                                  <span className="text-xs">▸</span>
                                   {sub.label}
                                 </span>
                               </Link>

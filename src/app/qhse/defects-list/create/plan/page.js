@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import QhseSidebar from "../../../components/QhseSidebar";
 
 export default function DefectCreatePage() {
-  const pathname = usePathname();
 
   const [form, setForm] = useState({
     equipmentDefect: "",
@@ -64,50 +63,8 @@ export default function DefectCreatePage() {
 
   return (
     <div className="min-h-screen bg-transparent text-white flex">
-      {/* Left mini sidebar (like Training) */}
-      <div
-        className="fixed left-0 top-0 h-full bg-slate-900/98 border-r border-white/20 shadow-2xl backdrop-blur-md z-50"
-        style={{ width: "280px" }}
-      >
-        <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-6 border-b border-white/10">
-            <h2 className="text-lg font-bold text-white">Navigation</h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-2">
-              <div className="space-y-1">
-                <div className="px-4 py-3 rounded-xl text-sm font-medium bg-orange-500 text-white shadow-lg shadow-orange-500/40">
-                  Defects list
-                </div>
-                <div className="ml-4 space-y-1">
-                  <Link
-                    href="/qhse/defects-list/create/plan"
-                    className={`block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
-                      pathname === "/qhse/defects-list/create/plan"
-                        ? "bg-orange-400/30 text-white border border-orange-400/50"
-                        : "text-white/80 hover:bg-white/10 hover:text-white border border-white/5"
-                    }`}
-                  >
-                    Create defect
-                  </Link>
-                  <Link
-                    href="/qhse/defects-list/create/list"
-                    className={`block w-full text-left px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
-                      pathname === "/qhse/defects-list/create/list"
-                        ? "bg-orange-400/30 text-white border border-orange-400/50"
-                        : "text-white/80 hover:bg-white/10 hover:text-white border border-white/5"
-                    }`}
-                  >
-                    Defects list
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <QhseSidebar />
 
-      {/* Main Content */}
       <div className="flex-1 ml-72">
         <div className="mx-auto max-w-4xl px-6 py-10 space-y-6">
           <header className="flex items-center justify-between gap-4">
